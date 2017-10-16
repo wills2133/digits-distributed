@@ -1,0 +1,190 @@
+Searching 418 files for "encode_entry" (case sensitive, whole word)
+
+/home/wills/Projects/digits/digits/.tags:
+    <binary>
+
+/home/wills/Projects/digits/digits/.tags_sorted_by_file:
+    <binary>
+
+/home/wills/Projects/digits/digits/digits.log:
+  126  2017-08-31 02:48:27 [20170831-024323-ffa2] [WARNING] Create train_db DB unrecognized output: self.run()
+  127  2017-08-31 02:48:27 [20170831-024323-ffa2] [WARNING] Create train_db DB unrecognized output: File "/home/wills/Projects/digits/digits/tools/create_generic_db.py", line 246, in run
+  128: 2017-08-31 02:48:27 [20170831-024323-ffa2] [WARNING] Create train_db DB unrecognized output: entry_value = self.extension.encode_entry(entry_id)
+  129: 2017-08-31 02:48:27 [20170831-024323-ffa2] [WARNING] Create train_db DB unrecognized output: File "/home/wills/Projects/digits/digits/extensions/data/objectDetection/data.py", line 56, in encode_entry
+  130  2017-08-31 02:48:27 [20170831-024323-ffa2] [WARNING] Create train_db DB unrecognized output: img = digits.utils.image.load_image(image_filename)
+  131  2017-08-31 02:48:27 [20170831-024323-ffa2] [WARNING] Create train_db DB unrecognized output: File "/home/wills/Projects/digits/digits/utils/image.py", line 64, in load_image
+
+/home/wills/Projects/digits/digits/extensions/data/imageProcessing/data.py:
+   37  
+   38      @override
+   39:     def encode_entry(self, entry):
+   40          """
+   41          Return numpy.ndarray
+
+/home/wills/Projects/digits/digits/extensions/data/imageSegmentation/data.py:
+   74  
+   75      @override
+   76:     def encode_entry(self, entry):
+   77          """
+   78          Return numpy.ndarray
+
+/home/wills/Projects/digits/digits/extensions/data/interface.py:
+   25              setattr(self, k, v)
+   26  
+   27:     def encode_entry(self, entry):
+   28          """
+   29          Encode the entry associated with specified ID (returned by
+   ..
+  107          This function is called on the main thread
+  108          The returned list will be spread across all reader threads
+  109:         Reader threads will call encode_entry() with IDs returned by
+  110          this function in no particular order
+  111          """
+
+/home/wills/Projects/digits/digits/extensions/data/objectDetection/data.py:
+   45  
+   46      @override
+   47:     def encode_entry(self, entry):
+   48          """
+   49          Return numpy.ndarray
+
+/home/wills/Projects/digits/digits/jobs/20170905-065011-325c/examples/VOC0712/VOC0712_test_lmdb/data.mdb:
+    File too large, skipping
+
+/home/wills/Projects/digits/digits/jobs/20170905-065011-325c/examples/VOC0712/VOC0712_trainval_lmdb/data.mdb:
+    File too large, skipping
+
+/home/wills/Projects/digits/digits/tools/create_generic_db.py:
+  244                  for entry_id in batch:
+  245                      # call into extension to format entry into number arrays
+  246:                     entry_value = self.extension.encode_entry(entry_id)
+  247                      # entry_value is either a list of (feature, label) tuples
+  248                      # or a single tuple
+
+24 matches across 8 files
+
+
+Searching 418 files for "get_dataset_form" (case sensitive, whole word)
+
+/home/wills/Projects/digits/digits/.tags:
+    <binary>
+
+/home/wills/Projects/digits/digits/.tags_sorted_by_file:
+    <binary>
+
+/home/wills/Projects/digits/digits/dataset/generic/views.py:
+   42      if extension is None:
+   43          raise ValueError("Unknown extension '%s'" % extension_id)
+   44:     extension_form = extension.get_dataset_form()
+   45  
+   46      # Is there a request to clone a job with ?clone=<job_id>
+   ..
+   74  
+   75      extension_class = extensions.data.get_extension(extension_id)
+   76:     extension_form = extension_class.get_dataset_form()
+   77      extension_form_valid = extension_form.validate_on_submit()
+   78  
+
+/home/wills/Projects/digits/digits/extensions/data/imageProcessing/data.py:
+   79      @staticmethod
+   80      @override
+   81:     def get_dataset_form():
+   82          return DatasetForm()
+   83  
+   ..
+   87          """
+   88          parameters:
+   89:         - form: form returned by get_dataset_form(). This may be populated
+   90          with values if the job was cloned
+   91          returns:
+
+/home/wills/Projects/digits/digits/extensions/data/imageSegmentation/data.py:
+  122      @staticmethod
+  123      @override
+  124:     def get_dataset_form():
+  125          return DatasetForm()
+  126  
+  ...
+  130          """
+  131          parameters:
+  132:         - form: form returned by get_dataset_form(). This may be populated
+  133          with values if the job was cloned
+  134          returns:
+
+/home/wills/Projects/digits/digits/extensions/data/interface.py:
+   41  
+   42      @staticmethod
+   43:     def get_dataset_form():
+   44          """
+   45          Return a Form object with all fields required to create the dataset
+   ..
+   51          """
+   52          Parameters:
+   53:         - form: form returned by get_dataset_form(). This may be populated
+   54             with values if the job was cloned
+   55          return:
+
+/home/wills/Projects/digits/digits/extensions/data/objectDetection/data.py:
+  147      @staticmethod
+  148      @override
+  149:     def get_dataset_form():
+  150          return DatasetForm()
+  151  
+  ...
+  155          """
+  156          parameters:
+  157:         - form: form returned by get_dataset_form(). This may be populated with values if the job was cloned
+  158          return:
+  159          - (template, context) tuple
+
+/home/wills/Projects/digits/digits/jobs/20170905-065011-325c/examples/VOC0712/VOC0712_test_lmdb/data.mdb:
+    File too large, skipping
+
+/home/wills/Projects/digits/digits/jobs/20170905-065011-325c/examples/VOC0712/VOC0712_trainval_lmdb/data.mdb:
+    File too large, skipping
+
+26 matches across 7 files
+
+
+Searching 418 files for "LMDBs" (case sensitive, whole word)
+
+/home/wills/Projects/digits/digits/dataset/images/generic/test_lmdb_creator.py:
+    2  # Copyright (c) 2015-2017, NVIDIA CORPORATION.  All rights reserved.
+    3  """
+    4: Functions for creating temporary LMDBs
+    5  Used in test_views
+    6  """
+    .
+   38  def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
+   39      """
+   40:     Creates LMDBs for generic inference
+   41      Returns the filename for a test image
+   42  
+
+/home/wills/Projects/digits/digits/dataset/images/generic/test_views.py:
+   50  class BaseViewsTestWithImageset(BaseViewsTest):
+   51      """
+   52:     Provides some LMDBs and some functions
+   53      """
+   54  
+   ..
+   57          super(BaseViewsTestWithImageset, cls).setUpClass()
+   58          if not hasattr(BaseViewsTestWithImageset, 'imageset_folder'):
+   59:             # Create folder and LMDBs for all test classes
+   60              BaseViewsTestWithImageset.imageset_folder = tempfile.mkdtemp()
+   61              BaseViewsTestWithImageset.test_image = create_lmdbs(BaseViewsTestWithImageset.imageset_folder)
+
+/home/wills/Projects/digits/digits/jobs/20170905-065011-325c/examples/VOC0712/VOC0712_test_lmdb/data.mdb:
+    File too large, skipping
+
+/home/wills/Projects/digits/digits/jobs/20170905-065011-325c/examples/VOC0712/VOC0712_trainval_lmdb/data.mdb:
+    File too large, skipping
+
+/home/wills/Projects/digits/digits/templates/datasets/images/generic/new.html:
+   29              <!-- Nav tabs -->
+   30              <ul class="nav nav-tabs" id="db-tabs" role="tablist">
+   31:                 <li><a href="#db-prebuilt" role="tab" data-toggle="tab">Use Prebuilt LMDBs</a></li>
+   32              </ul>
+   33  
+
+5 matches across 3 files

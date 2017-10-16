@@ -1,0 +1,13 @@
+{# Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved. #}
+
+{% from "helper.html" import print_flashes %}
+{% from "helper.html" import print_errors %}
+{% from "helper.html" import mark_errors %}
+
+
+<div class="form-group{{mark_errors([form.voc_folder])}}">
+    {{ form.voc_folder.label }}
+    {{ form.voc_folder.tooltip }}
+    {{ form.voc_folder(class='form-control autocomplete_path', placeholder='folder') }}
+</div>
+
