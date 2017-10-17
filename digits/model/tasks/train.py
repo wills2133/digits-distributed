@@ -270,6 +270,7 @@ class TrainTask(Task):
 
         # loss graph data
         data = self.combined_graph_data()
+        print '----------data', data
         if data:
             socketio.emit('task update',
                           {

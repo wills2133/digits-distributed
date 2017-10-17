@@ -694,24 +694,6 @@ function visualizeNetwork() {
                         });
                     </script>
 
-                    <div id="ace-editor2"></div>
-                    <script>
-                        var editor = ace.edit("ace-editor2");
-                        editor.$blockScrolling = Infinity;
-                        editor.setTheme("ace/theme/chrome");
-                        editor.session.setFoldStyle('manual');
-                        editor.setShowPrintMargin(false);
-                        var PythonMode = ace.require("ace/mode/python").Mode;
-                        var LuaMode = ace.require("ace/mode/lua").Mode;
-                        $( document ).ready(function() {
-                            editor.setValue($('textarea#custom_network').val());
-                            editor.selection.moveTo(0, 0);
-                        });
-                    </script>
-
-
-
-
                     <div class="form-group{{mark_errors([form.custom_network_snapshot])}}">
                         {{form.custom_network_snapshot.label}}
                         {{form.custom_network_snapshot.tooltip}}

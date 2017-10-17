@@ -619,13 +619,9 @@ class CaffeTrainTask(TrainTask):
 
     def save_files_generic(self):
 
-        print '--------------self.data_type', self.data_type
-
         if self.data_type == 'ssd_pascal' or self.data_type == 'ssd' :
-            ############## train_net ##############
-            print '----------------------------------------------'
-            print 'train_ssd'
-            print '----------------------------------------------'
+
+            ############## parameters #############
             # Add non-data layers
             job_path = self.path(self.train_val_file)
             solver_file = self.path('solver.prototxt')
@@ -639,17 +635,21 @@ class CaffeTrainTask(TrainTask):
             output_result_dir = self.data_dir+'/'+'Main'
 
             iter_size = self.batch_accumulation / self.batch_size
+            ################ end ##################
 
+            print '----------------------------------------------'
+            print 'train_ssd'
+            print '----------------------------------------------'
+            ############## train_net ##############
             ssd_pascal.CreateTrainNet(train_net_path, train_data_path, self.batch_size) 
             ################ end ##################
 
             ############### test_net ############## 
-
-            ssd_pascal.CreateTestNet(test_net_path, test_data_path, self.test_batch_size, label_map_file, name_size_file, output_result_dir)
-
+            ssd_pascal.CreateTestNet(test_net_path, test_data_path, self.test_batch_size, 
+                label_map_file, name_size_file, output_result_dir)
             ################# end #################
 
-            ############## ssd solver #############
+            ############s## ssd solver #############
             solver = caffe_pb2.SolverParameter()
 
             solver.max_iter = 120000
@@ -662,34 +662,7 @@ class CaffeTrainTask(TrainTask):
             ################### end ###############
 
             ############## deploy_net #############
-            # Split up train_val and deploy layers
-
-            # network = cleanedUpGenericNetwork(self.network)
-            # print network
-            # data_layers, train_val_layers, deploy_layers = filterLayersByState(network)
-
-            # Write deploy file
             deploy_network = caffe_pb2.NetParameter()
-
-            # Input
-            # deploy_network.input.append('data')
-            # shape = deploy_network.input_shape.add()
-            # shape.dim.append(1)
-            # shape.dim.append(self.dataset.get_feature_dims()[2])  # channels
-            # if train_image_data_layer.transform_param.HasField('crop_size'):
-            #     shape.dim.append(
-            #         train_image_data_layer.transform_param.crop_size)
-            #     shape.dim.append(
-            #         train_image_data_layer.transform_param.crop_size)
-            # else:
-            #     shape.dim.append(self.dataset.get_feature_dims()[0])  # height
-            #     shape.dim.append(self.dataset.get_feature_dims()[1])  # width
-
-            # Layers
-            # deploy_network.MergeFrom(deploy_layers)
-
-            
-
             # Write to file
             with open(self.path(self.deploy_file), 'w') as outfile:
                 text_format.PrintMessage(deploy_network, outfile)
@@ -1121,7 +1094,8 @@ class CaffeTrainTask(TrainTask):
         if match:
             phase = match.group(1)
             # index = int(match.group(2))
-            name = match.group(3)
+            # name = match.group(3)
+            name = 'accuracy'
             value = match.group(4)
             ########################
             #-nan

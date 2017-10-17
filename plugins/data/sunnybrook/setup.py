@@ -13,7 +13,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name="digits_sunnybrook_data_plugin2",
+    name="digits_sunnybrook_data_plugin",
     version="0.0.1",
     author="Greg Heinrich",
     description=("A data ingestion plugin for the Sunnybrook cardiac dataset"),
@@ -22,7 +22,7 @@ setup(
     packages=find_packages(),
     entry_points={
         DIGITS_PLUGIN_GROUP: [
-            'class=digitsDataPluginSunnybrook2:DataIngestion',
+            'class=digitsDataPluginSunnybrook:DataIngestion',
         ]
     },
     include_package_data=True,
