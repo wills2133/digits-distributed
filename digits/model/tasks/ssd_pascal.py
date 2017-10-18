@@ -406,7 +406,7 @@ def CreateTrainNet(train_net_file2, train_data2, batch_size_per_device2):
     # shutil.copy(train_net_file2, job_dir)
 
 
-def CreateTestNet(test_net_file2, test_data2, test_batch_size2, label_map_file2, name_size_file2):
+def CreateTestNet(test_net_file2, test_data2, test_batch_size2, label_map_file2, name_size_file2, output_result_dir2):
 
     # parameters for generating detection output.
     det_out_param = {
@@ -415,11 +415,11 @@ def CreateTestNet(test_net_file2, test_data2, test_batch_size2, label_map_file2,
         'background_label_id': background_label_id,
         'nms_param': {'nms_threshold': 0.45, 'top_k': 400},
         'save_output_param': {
-            'output_directory': output_result_dir,
+            'output_directory': output_result_dir2,
             'output_name_prefix': "comp4_det_test_",
             'output_format': "VOC",
-            'label_map_file': label_map_file,
-            'name_size_file': name_size_file,
+            'label_map_file': label_map_file2,
+            'name_size_file': name_size_file2,
             'num_test_image': num_test_image,
             },
         'keep_top_k': 200,
@@ -433,14 +433,14 @@ def CreateTestNet(test_net_file2, test_data2, test_batch_size2, label_map_file2,
         'background_label_id': background_label_id,
         'overlap_threshold': 0.5,
         'evaluate_difficult_gt': False,
-        'name_size_file': name_size_file,
+        'name_size_file': name_size_file2,
         }
 
 
     # Create test net.
     net = caffe.NetSpec()
     net.data, net.label = CreateAnnotatedDataLayer(test_data2, batch_size=test_batch_size2,
-            train=False, output_label=True, label_map_file=label_map_file,
+            train=False, output_label=True, label_map_file=label_map_file2,
             transform_param=test_transform_param)
 
     VGGNetBody(net, from_layer='data', fully_conv=True, reduced=True, dilated=True,

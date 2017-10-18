@@ -27,6 +27,8 @@ from digits.utils.filesystem import tail
 # Must import after importing digit.config
 import caffe
 import caffe_pb2
+#####
+from . import ssd_pascal
 
 # NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 5
@@ -625,8 +627,8 @@ class CaffeTrainTask(TrainTask):
             # Add non-data layers
             job_path = self.path(self.train_val_file)
             solver_file = self.path('solver.prototxt')
-            train_net_path = "self.path('train_val.prototxt')"
-            test_net_path = "self.path('test.prototxt')"
+            train_net_path = self.path('train_val.prototxt')
+            test_net_path = self.path('test.prototxt')
             snapshot_path = self.path('VOC_Snapshot')
             train_data_path = self.data_dir+'/'+'VOC0712_trainval_lmdb'
             test_data_path = self.data_dir+'/'+'VOC0712_test_lmdb'
