@@ -163,6 +163,7 @@ class DataIngestion(DataIngestionInterface):
         #     feature[2] = img
         feature = []
         label = []
+        ####
         print 'dataset_dir', entry
         # print 'bash /home/wills/.local/lib/python2.7/site-packages/digitsDataPluginSunnybrook/create_list.sh %s %s' % (voc_path, dataset_dir)
         os.system( 'bash /usr/local/lib/python2.7/site-packages/digitsSSD/scripts/create_list.sh %s %s' % (self.userdata['voc_folder'], entry) )
