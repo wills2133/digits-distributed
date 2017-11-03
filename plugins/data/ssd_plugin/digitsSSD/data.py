@@ -168,8 +168,8 @@ class DataIngestion(DataIngestionInterface):
         os.system( 'bash /usr/local/lib/python2.7/site-packages/digitsSSD/scripts/create_list.sh %s %s' % (self.userdata['voc_folder'], entry) )
 
         # print 'bash /home/wills/.local/lib/python2.7/site-packages/digitsDataPluginSunnybrook/create_data.sh %s %s' % (voc_path, dataset_dir)
-        os.system( 'bash //usr/local/lib/python2.7/site-packages/digitsSSD/scripts/create_data.sh %s %s' % (self.userdata['voc_folder'], entry) )
-        shutil.copy('/home/wills/.local/lib/python2.7/site-packages/digitsSSD/scripts/labelmap_voc.prototxt', entry)
+        os.system( 'bash /usr/local/lib/python2.7/site-packages/digitsSSD/scripts/create_data.sh %s %s' % (self.userdata['voc_folder'], entry) )
+        shutil.copy('/usr/local/lib/python2.7/site-packages/digitsSSD/scripts/labelmap_voc.prototxt', entry)
         return feature, label
 
     @staticmethod
