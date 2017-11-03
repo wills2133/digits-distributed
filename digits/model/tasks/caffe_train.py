@@ -9,7 +9,6 @@ import os
 import re
 import sys
 import time
-import ssd_pascal
 
 from google.protobuf import text_format
 import numpy as np
@@ -638,12 +637,19 @@ class CaffeTrainTask(TrainTask):
 
             iter_size = self.batch_accumulation / self.batch_size
             ################ end ##################
-
             print '----------------------------------------------'
             print 'train_ssd'
             print '----------------------------------------------'
+
             ############## train_net ##############
-            ssd_pascal.CreateTrainNet(train_net_path, train_data_path, self.batch_size) 
+            # ssd_pascal.CreateTrainNet(train_net_path, train_data_path, self.batch_size) 
+
+            ###directly edit on custom network text form page
+            network_test, n = re.subn('(?<=source:)(.+)?(?=\n)', '"'+train_data_path+'"', self.network_text)
+            # print (network_test)
+            f = open(train_net_path, 'w')
+            f.write(network_test)
+            f.close()
             ################ end ##################
 
             ############### test_net ############## 

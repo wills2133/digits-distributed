@@ -22,7 +22,154 @@ from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
+
+
 blueprint = flask.Blueprint(__name__, __name__)
+#######################################################
+from digits.frameworks import Framework
+from digits.utils import subclass, override, parse_version
+
+class framenet(Framework):
+
+    """
+    Defines required methods to interact with the Caffe framework
+    This class can be instantiated as many times as there are compatible
+    instances of Caffe
+    """
+
+    # short descriptive name
+
+    # identifier of framework class (intended to be the same across
+    # all instances of this class)
+    CLASS = 'caffe'
+
+    # whether this framework can shuffle data during training
+    CAN_SHUFFLE_DATA = False
+    SUPPORTS_PYTHON_LAYERS_FILE = True
+    SUPPORTS_TIMELINE_TRACING = False
+
+    if config_value('caffe')['flavor'] == 'NVIDIA':
+        if parse_version(config_value('caffe')['version']) > parse_version('0.14.0-alpha'):
+            SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
+                                      'RMSPROP', 'ADADELTA', 'ADAM']
+        else:
+            SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD']
+    elif config_value('caffe')['flavor'] == 'BVLC':
+        SUPPORTED_SOLVER_TYPES = ['SGD', 'NESTEROV', 'ADAGRAD',
+                                  'RMSPROP', 'ADADELTA', 'ADAM']
+    else:
+        raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
+
+    SUPPORTED_DATA_TRANSFORMATION_TYPES = ['MEAN_SUBTRACTION', 'CROPPING']
+    SUPPORTED_DATA_AUGMENTATION_TYPES = []
+
+    @override
+    def __init__(self, name):
+        super(framenet, self).__init__()
+        self.framework_id = name
+        self.NAME = name
+
+    @override
+    def create_train_task(self, **kwargs):
+        """
+        create train task
+        """
+        return CaffeTrainTask(framework_id=self.framework_id, **kwargs)
+
+    @override
+    def validate_network(self, data):
+        """
+        validate a network (input data are expected to be a text
+        description of the network)
+        """
+        pb = caffe_pb2.NetParameter()
+        try:
+            text_format.Merge(data, pb)
+        except text_format.ParseError as e:
+            raise BadNetworkError('Not a valid NetParameter: %s' % e)
+
+    @override
+    def get_standard_network_desc(self, network):
+        """
+        return description of standard network
+        network is expected to be a instance of caffe_pb2.NetParameter
+        """
+        networks_dir = os.path.join(os.path.dirname(digits.__file__), 'standard-networks', self.CLASS)
+
+        for filename in os.listdir(networks_dir):
+            path = os.path.join(networks_dir, filename)
+            if os.path.isfile(path):
+                match = None
+                match = re.match(r'%s.prototxt' % network, filename)
+                if match:
+                    with open(path) as infile:
+                        return infile.read()
+        # return None if not found
+        return None
+
+    @override
+    def get_network_from_desc(self, network_desc):
+        """
+        return network object from a string representation
+        """
+        network = caffe_pb2.NetParameter()
+        text_format.Merge(network_desc, network)
+        return network
+
+    @override
+    def get_network_from_previous(self, previous_network, use_same_dataset):
+        """
+        return new instance of network from previous network
+        """
+        network = caffe_pb2.NetParameter()
+        network.CopyFrom(previous_network)
+
+        if not use_same_dataset:
+            # Rename the final layer
+            # XXX making some assumptions about network architecture here
+            ip_layers = [l for l in network.layer if l.type == 'InnerProduct']
+            if len(ip_layers) > 0:
+                ip_layers[-1].name = '%s_retrain' % ip_layers[-1].name
+
+        return network
+
+    @override
+    def get_network_from_path(self, path):
+        """
+        return network object from a file path
+        """
+        network = caffe_pb2.NetParameter()
+
+        with open(path) as infile:
+            text_format.Merge(infile.read(), network)
+
+        return network
+
+    @override
+    def get_network_visualization(self, **kwargs):
+        """
+        return visualization of network
+        """
+        desc = kwargs['desc']
+        net = caffe_pb2.NetParameter()
+        text_format.Merge(desc, net)
+        # Throws an error if name is None
+        if not net.name:
+            net.name = 'Network'
+        return ('<image src="data:image/png;base64,' +
+                caffe.draw.draw_net(net, 'UD').encode('base64') +
+                '" style="max-width:100%" />')
+
+    @override
+    def can_accumulate_gradients(self):
+        if config_value('caffe')['flavor'] == 'BVLC':
+            return True
+        elif config_value('caffe')['flavor'] == 'NVIDIA':
+            return (parse_version(config_value('caffe')['version']) > parse_version('0.14.0-alpha'))
+        else:
+            raise ValueError('Unknown flavor.  Support NVIDIA and BVLC flavors only.')
+
+############################################
 
 
 @blueprint.route('/new', methods=['GET'])
@@ -42,12 +189,15 @@ def new(extension_id=None):
     # Is there a request to clone a job with ?clone=<job_id>
     fill_form_if_cloned(form)
 
+    frameworks1 = [framenet('test'), framenet('train')]
+    print 'flask_render_template'
     return flask.render_template(
         'models/images/generic/new.html',
         extension_id=extension_id,
         extension_title=extensions.data.get_extension(extension_id).get_title() if extension_id else None,
         form=form,
         frameworks=frameworks.get_frameworks(),
+        # frameworks=frameworks1,
         previous_network_snapshots=prev_network_snapshots,
         previous_networks_fullinfo=get_previous_networks_fulldetails(),
         pretrained_networks_fullinfo=get_pretrained_networks_fulldetails(),
@@ -80,10 +230,10 @@ def create(extension_id=None):
     
     if not form.validate_on_submit():
         if request_wants_json():
-            # print 'request_wants_json'
+            print 'request_wants_json'
             return flask.jsonify({'errors': form.errors}), 400
         else:
-            # print 'request_wants_json_not'
+            print 'request_wants_json_not'
             return flask.render_template(
                 'models/images/generic/new.html',
                 extension_id=extension_id,
@@ -186,6 +336,7 @@ def create(extension_id=None):
 
             elif form.method.data == 'custom':
                 network = fw.get_network_from_desc(form.custom_network.data)
+
                 pretrained_model = form.custom_network_snapshot.data.strip()
             else:
                 raise werkzeug.exceptions.BadRequest(
@@ -277,6 +428,7 @@ def create(extension_id=None):
                     data_dir=datasetJob._dir,
                     data_type=datasetJob.extension_id,
                     test_batch_size=form.batch_size.data[0],
+                    network_text = form.custom_network.data,
                     ###############
                 )
                 )
@@ -307,6 +459,7 @@ def create(extension_id=None):
                     data_dir=None,
                     data_type=None,
                     test_batch_size=None,
+                    network_text = None,
                     ###############
                 )
                 )

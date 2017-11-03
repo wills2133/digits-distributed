@@ -69,6 +69,7 @@ class TrainTask(Task):
         self.data_dir = kwargs.pop('data_dir', None)
         self.data_type = kwargs.pop('data_type', None)
         self.test_batch_size = kwargs.pop('test_batch_size', None)
+        self.network_text = kwargs.pop('network_text', None)
         ###############
 
         super(TrainTask, self).__init__(job_dir=job.dir(), **kwargs)
