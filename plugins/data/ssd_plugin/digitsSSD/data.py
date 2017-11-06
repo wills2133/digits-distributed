@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
@@ -17,6 +19,7 @@ from digits.utils.constants import COLOR_PALETTE_ATTRIBUTE
 from digits.extensions.data.interface import DataIngestionInterface
 from .forms import DatasetForm, InferenceForm
 
+import sys
 
 DATASET_TEMPLATE = "templates/dataset_template.html"
 INFERENCE_TEMPLATE = "templates/inference_template.html"
@@ -163,14 +166,22 @@ class DataIngestion(DataIngestionInterface):
         #     feature[2] = img
         feature = []
         label = []
-        ####
         print 'dataset_dir', entry
-        # print 'bash /home/wills/.local/lib/python2.7/site-packages/digitsDataPluginSunnybrook/create_list.sh %s %s' % (voc_path, dataset_dir)
-        os.system( 'bash /usr/local/lib/python2.7/dist-packages/digitsSSD/scripts/create_list.sh %s %s' % (self.userdata['voc_folder'], entry) )
-
-        # print 'bash /home/wills/.local/lib/python2.7/site-packages/digitsDataPluginSunnybrook/create_data.sh %s %s' % (voc_path, dataset_dir)
-        os.system( 'bash /usr/local/lib/python2.7/dist-packages/digitsSSD/scripts/create_data.sh %s %s' % (self.userdata['voc_folder'], entry) )
-        shutil.copy('/usr/local/lib/python2.7/dist-packages/digitsSSD/scripts/labelmap_voc.prototxt', entry)
+        find_path = False 
+        for p in sys.path:
+            plug_in_path = p + '/digitsSSD/scripts'
+            if os.path.exists(plug_in_path):
+                # print ( 'bash ' + plug_in_path + '/create_list.sh ' + self.userdata['voc_folder'] + ' ' +  entry) )
+                os.system( 'bash ' + plug_in_path + '/create_list.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
+                # print ( 'bash ' + plug_in_path + '/create_data.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
+                os.system( 'bash ' + plug_in_path + '/create_data.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
+                shutil.copy( (plug_in_path + '/labelmap_voc.prototxt'), entry)
+                find_path = True
+                break;
+         
+        if not find_path:
+            print 'no match plugin path found'
+            
         return feature, label
 
     @staticmethod
