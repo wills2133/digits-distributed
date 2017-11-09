@@ -1102,8 +1102,8 @@ class CaffeTrainTask(TrainTask):
         if match:
             phase = match.group(1)
             # index = int(match.group(2))
-            # name = match.group(3)
-            name = 'accuracy'
+            name = match.group(3)
+            # name = 'accuracy'
             value = match.group(4)
             ########################
             #-nan
