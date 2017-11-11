@@ -369,6 +369,52 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             title="Infer a list of images and show the network outputs."
                             ></span>
                     </div>
+
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <div class="col-sm-6">
+                            <h3>Performance</h3>
+                            <div class="form-group">
+                                <select id="performance_class" name="performance_class" class="form-control" data-edit-select="None" >
+                                        <option value="None">None</option>
+                                    {% for key in performance_data|sort %}
+                                        <option value="{{ key }}">{{ key }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="performance_data_show">
+                                
+                            </div>
+                            <script>
+                                // var content = document.getElementsByClassName('performance_data_show');
+                                // var selectNode = document.getElementById('performance_class');
+                                // selectNode.addEventListener('change', function() {
+                                //      content.innerHTML = '我现在选择了';
+                                // });
+                              
+                            </script>
+
+                            <script>
+                                {% for key in performance_data|sort %}
+                                    var {{ key }} = "<pre>{{performance_data[key]|safe}}</pre>";
+                                {% endfor %}
+                                
+                                var choose = document.getElementById('performance_class');
+                                var content = document.getElementsByClassName('performance_data_show')[0];
+                                choose.addEventListener('change', function () {
+                                      if( choose.value == 'None' ){
+                                            content.innerHTML = '';
+                                        }
+                                    {% for key in performance_data|sort %}
+                                        if( choose.value == '{{ key }}' ){
+                                            content.innerHTML = {{ key }};
+                                        }
+                                    {% endfor %}
+                                });
+                            </script>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>

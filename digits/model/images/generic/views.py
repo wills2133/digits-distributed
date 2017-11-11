@@ -29,6 +29,7 @@ blueprint = flask.Blueprint(__name__, __name__)
 from digits.frameworks import Framework
 from digits.utils import subclass, override, parse_version
 
+
 class framenet(Framework):
 
     """
@@ -284,7 +285,6 @@ def create(extension_id=None):
                 group=form.group_name.data,
                 dataset_id=datasetJob.id(),
             )
-
             # get framework (hard-coded to caffe for now)
             fw = frameworks.get_framework_by_id(form.framework.data)
 
@@ -493,13 +493,14 @@ def show(job, related_jobs=None):
     """
     data_extensions = get_data_extensions()
     view_extensions = get_view_extensions()
-
+    performance_data = get_performance_data(job.dir())
     return flask.render_template(
         'models/images/generic/show.html',
         job=job,
         data_extensions=data_extensions,
         view_extensions=view_extensions,
         related_jobs=related_jobs,
+        performance_data = performance_data,
     )
 
 
@@ -1084,3 +1085,20 @@ def get_view_extensions():
     for extension in all_extensions:
         view_extensions[extension.get_id()] = extension.get_title()
     return view_extensions
+
+
+#################
+def get_performance_data(job_dir):
+    performance_data = {}
+    file_path = job_dir + '/performance_data.txt'
+    # print file_path
+    if os.path.exists(file_path):
+        f = open ( file_path )
+        all_lines = f.readlines()
+        for cls_data_line in all_lines:
+            cls_data = cls_data_line.split('|')
+            performance_data[cls_data[0]] = ('<br>').join( cls_data[1:-1] ) 
+    # print performance_data
+    return performance_data
+#################
+
