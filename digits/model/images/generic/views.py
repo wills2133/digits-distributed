@@ -29,7 +29,6 @@ blueprint = flask.Blueprint(__name__, __name__)
 from digits.frameworks import Framework
 from digits.utils import subclass, override, parse_version
 
-
 class framenet(Framework):
 
     """
@@ -493,14 +492,20 @@ def show(job, related_jobs=None):
     """
     data_extensions = get_data_extensions()
     view_extensions = get_view_extensions()
-    performance_data = get_performance_data(job.dir())
+    #######
+    # print "-----------------------get_performance_data"
+    # # performance_data = get_performance_data(job.dir())
+    # #######
     return flask.render_template(
         'models/images/generic/show.html',
         job=job,
         data_extensions=data_extensions,
         view_extensions=view_extensions,
         related_jobs=related_jobs,
-        performance_data = performance_data,
+        # ######
+        performance_heading = 'None',
+        performance_data = {},
+        # ######
     )
 
 
@@ -723,11 +728,13 @@ def infer_db():
     """
     model_job = job_from_request()
 
+
     if 'db_path' not in flask.request.form or flask.request.form['db_path'] is None:
         raise werkzeug.exceptions.BadRequest('db_path is a required field')
 
     db_path = flask.request.form['db_path']
 
+ 
     if not os.path.exists(db_path):
         raise werkzeug.exceptions.BadRequest('DB "%s" does not exit' % db_path)
 
@@ -1089,16 +1096,318 @@ def get_view_extensions():
 
 #################
 def get_performance_data(job_dir):
+    from . import cal_map
+
     performance_data = {}
-    file_path = job_dir + '/performance_data.txt'
-    # print file_path
-    if os.path.exists(file_path):
-        f = open ( file_path )
+    data_file_path = job_dir + '/performance_data.txt'
+
+    if not os.path.exists(data_file_path) :
+        cal_map.calculate_map(job_dir, job_dir)
+    print data_file_path
+    
+    if os.path.exists(data_file_path):
+        f = open ( data_file_path )
         all_lines = f.readlines()
         for cls_data_line in all_lines:
             cls_data = cls_data_line.split('|')
-            performance_data[cls_data[0]] = ('<br>').join( cls_data[1:-1] ) 
+            performance_data[cls_data[0]] = ('<br>').join( cls_data[1:-1] )
+    else:
+        print 'can not find performance_data.txt'
     # print performance_data
     return performance_data
+#################
+
+#################
+@blueprint.route('/cal_performance_data.json', methods=['POST'])
+@blueprint.route('/cal_performance_data', methods=['POST', 'GET'])
+def cal_performance_data():
+    from . import cal_map
+
+    if 'gt_lbl_path' in flask.request.form and flask.request.form['gt_lbl_path'] is not None:
+        gt_lbl_path = flask.request.form['gt_lbl_path']
+    else:
+         raise werkzeug.exceptions.BadRequest('pictues path is a required field')
+
+    performance_data = {}
+    data_file_path = os.path.join( gt_lbl_path, '..', 'performance_data.txt' )
+    pd_lbl_path = os.path.join( gt_lbl_path, '..', 'labels_prediction' )
+    # print pd_lbl_path
+
+    if not os.path.exists( pd_lbl_path ):
+        raise werkzeug.exceptions.BadRequest('labels_prediction is not found, please get prediction first')
+    if not os.path.exists( data_file_path ):
+        cal_map.calculate_map(gt_lbl_path, pd_lbl_path)
+    f = open ( data_file_path )
+    all_lines = f.readlines()
+    for cls_data_line in all_lines:
+        cls_data = cls_data_line.split('|')
+        performance_data[cls_data[0]] = ('<br>').join( cls_data[1:-1] )
+    f.close()
+
+    # print performance_data
+    """
+    Called from digits.model.views.models_show()
+    """
+    job = job_from_request()
+    # return flask.redirect(flask.url_for('digits.model.views.show', job_id=job.id()))
+    data_extensions = get_data_extensions()
+    view_extensions = get_view_extensions()
+    return flask.render_template(
+        'models/images/generic/show.html',
+        job=job,
+        data_extensions=data_extensions,
+        view_extensions=view_extensions,
+        related_jobs=None,
+        # ######
+        performance_heading = 'select a class',
+        performance_data = performance_data,
+        # ######
+    )
+#################
+
+
+#################
+@blueprint.route('/get_label.json', methods=['POST'])
+@blueprint.route('/get_label', methods=['POST', 'GET'])
+# @blueprint.route('/get_label', methods=['GET'])
+def get_label():
+    from . import save_labels
+    from PIL import ImageDraw, Image, ImageFont
+    if 'sp_pic_path' in flask.request.form and flask.request.form['sp_pic_path'] is not None:
+        sp_pic_path = flask.request.form['sp_pic_path']
+    else:
+         raise werkzeug.exceptions.BadRequest('pictues path is a required field')
+
+    ###get img name list
+    img_names = os.listdir(sp_pic_path)
+    ###get img width and height
+    img_path_0 = os.path.join( sp_pic_path, img_names[0] )
+
+    img = Image.open(img_path_0)
+    img_w = img.size[0]
+    img_h = img.size[1]
+    # print img_w, img_h
+    # ip = "localhost"
+    ip = "118.201.243.15"
+    port = 3380
+
+    for img_name in img_names:
+        img_path = os.path.join( sp_pic_path, img_name )
+        save_labels.get_response_label(img_path, img_w, img_h, ip, port)
+
+    return 'finish detection'
+    # data_extensions = get_data_extensions()
+    # view_extensions = get_view_extensions()
+    # return flask.render_template(
+    #     'models/images/generic/show.html',
+    #     job=job,
+    #     data_extensions=data_extensions,
+    #     view_extensions=view_extensions,
+    #     related_jobs=related_jobs,
+    #     # ######
+    #     performance_data = None,
+    #     # ######
+    # )
+
+#################
+
+
+#################
+@blueprint.route('/show_sample.json', methods=['POST'])
+@blueprint.route('/show_sample', methods=['POST', 'GET'])
+def show_sample():
+    from PIL import ImageDraw, Image, ImageFont
+    # if 'sp_pic_path' not in flask.request.form or flask.request.form['sp_pic_path'] is None:
+    #     print 'error'
+    if 'sp_pic_path' in flask.request.form and flask.request.form['sp_pic_path'] is not None:
+        sp_pic_path = flask.request.form['sp_pic_path']
+        # print "if--------------------sp_pic_path", sp_pic_path
+    else:
+        sp_pic_path = flask.request.args.get('sp_pic_path', None)
+        # print "else--------------------sp_pic_path", sp_pic_path
+        # raise werkzeug.exceptions.BadRequest('--------------------sp_pic_path is a required field')
+
+    # read class labels
+    labels = []
+    performance_data_path = os.path.join( sp_pic_path, '..', 'performance_data.txt')
+    print performance_data_path
+    if os.path.exists(performance_data_path):
+        f = open(performance_data_path)
+
+        all_lines = f.readlines()
+        for cls_data_line in all_lines:
+            cls_data = cls_data_line.split('|')
+            labels.append(cls_data[0])
+    else:
+        print 'can not find performance_data.txt'
+
+    job = job_from_request()
+    db = 'test_images'
+    total_offet = int(flask.request.args.get('size', 10))
+    page = int(flask.request.args.get('page', 0))
+    size = int(flask.request.args.get('size', 10))
+    label = flask.request.args.get('label', None)
+
+    if page < 0:
+        page = 0
+
+    if label is not None:
+        try:
+            label = int(label)
+        except ValueError:
+            label = None
+
+    img_dir = sp_pic_path
+    fa_label_dir = os.path.join( sp_pic_path, '..', 'labels_false_alarm')
+    md_label_dir = os.path.join( sp_pic_path, '..', 'labels_miss_detect')
+    label_file_dir = os.path.join( sp_pic_path, '..', 'labels_prediction')
+
+    if label != None:     
+        print 'label', label
+        if labels != []:
+            label_file_dir = os.path.join( sp_pic_path, '..', ('labels_' + labels[label]) )
+
+    ###get labls name list
+    filename_sets = os.listdir(label_file_dir)
+
+    ###
+    imgs = []
+    filenames = sorted( filename_sets )
+    # filenames = filename_sets
+    img_suffixes = ['.jpg', '.JPG', '.png', '.PNG', '.bmp', '.BMP']
+    
+    total_entries = len(filenames)
+    min_page = max(0, page - 5)
+    max_page = min((total_entries - 1) / size, page + 5)
+    pages = range(min_page, max_page + 1)
+
+    count_begin = page * size
+    count_end = (page + 1) * size
+    ###drawing parameters
+    font_size = 30
+    rect_thick = 15 
+    font = ImageFont.truetype('ubuntu_font_family/Ubuntu-B.ttf', font_size)
+    count = count_begin
+    while count < count_end and count < total_entries:
+
+        label_file = filenames[ count ]
+        count += 1
+        count_end_offset = 1
+        # print 'count', count
+
+        for img_suffix in img_suffixes:
+            pd_lbl_path = os.path.join( label_file_dir, label_file )
+            img_path = os.path.join( img_dir, label_file.split('.')[0]) + img_suffix
+            if os.path.exists(img_path) and os.path.exists(pd_lbl_path):
+                count_end_offset = 0
+
+                img = Image.open(img_path)
+                img_w = img.size[0]
+                img_h = img.size[1]
+                ###read label file and draw labels
+                f = open(pd_lbl_path)
+                lines = f.readlines()
+                num_obj = lines[0]
+
+                for n in range(1, int(num_obj)+1):
+                    items = lines[n].split()
+                    x_Ltop = int( float(items[1]) * img_w )
+                    y_Ltop = int( float(items[2]) * img_h )
+                    x_Rbtm = int( float(items[3]) * img_w )
+                    y_Rbtm = int( float(items[4]) * img_h )
+                    # write down label on image
+                    write = ImageDraw.Draw(img)
+                    write.text( ( (x_Ltop - font_size*0.5) if (img_w - x_Ltop) > font_size*2 else (x_Ltop - font_size*2), 
+                        (y_Ltop - font_size * 1.5) if (y_Ltop - font_size * 1.5) > 0 else (y_Rbtm + font_size*0.5) ), 
+                        items[0], font = font, fill = 'green')
+
+                    # draw boxes
+                    mask = Image.new('1', img.size)
+                    draw = ImageDraw.Draw(mask)
+                    for pix in (rect_thick, -rect_thick+1):
+                        x_Ltop -= pix /2
+                        y_Ltop -= pix /2
+                        x_Rbtm += pix /2
+                        y_Rbtm += pix /2
+                        draw.rectangle( ( (x_Ltop, y_Ltop , x_Rbtm, y_Rbtm) ), fill = (pix+rect_thick-1 and 255) )
+                    img.paste('green', mask = mask)
+                f.close()
+                
+                ###draw false labels if existed
+                fa_lbl_path = os.path.join( fa_label_dir, label_file )
+                if os.path.exists(fa_lbl_path):
+                    f = open(fa_lbl_path)
+                    lines = f.readlines()
+                    num_obj = lines[0]
+                    for n in range(1, int(num_obj)+1):
+                        items = lines[n].split()
+                        if label != None:
+                            if items[0] != labels[label]:
+                                continue
+                        x_Ltop = int( float(items[1]) * img_w )
+                        y_Ltop = int( float(items[2]) * img_h )
+                        x_Rbtm = int( float(items[3]) * img_w )
+                        y_Rbtm = int( float(items[4]) * img_h )
+                        write = ImageDraw.Draw(img)
+                        write.text( ( (x_Ltop - font_size*0.5) if (img_w - x_Ltop) > font_size*2 else (x_Ltop - font_size*2), 
+                            (y_Ltop - font_size * 1.5) if (y_Ltop - font_size * 1.5) > 0 else (y_Rbtm + font_size*0.5) ), 
+                            items[0], font = font, fill = 'orange')
+
+                        # draw boxes
+                        mask = Image.new('1', img.size)
+                        draw = ImageDraw.Draw(mask)
+                        for pix in (rect_thick, -rect_thick+1):
+                            x_Ltop -= pix /2
+                            y_Ltop -= pix /2
+                            x_Rbtm += pix /2
+                            y_Rbtm += pix /2
+                            draw.rectangle( ( (x_Ltop, y_Ltop , x_Rbtm, y_Rbtm) ), fill = (pix+rect_thick-1 and 255) )
+                        img.paste('orange', mask = mask)
+                    f.close()
+
+                ###draw miss detected labels if existed
+                md_lbl_path = os.path.join( md_label_dir, label_file )
+                if os.path.exists(md_lbl_path):
+                    f = open(md_lbl_path)
+                    lines = f.readlines()
+                    num_obj = lines[0]
+                    for n in range(1, int(num_obj)+1):
+                        items = lines[n].split()
+                        if label != None:
+                            if items[0] != labels[label]:
+                                continue
+                        x_Ltop = int( float(items[1]) * img_w )
+                        y_Ltop = int( float(items[2]) * img_h )
+                        x_Rbtm = int( float(items[3]) * img_w )
+                        y_Rbtm = int( float(items[4]) * img_h )
+
+                        write = ImageDraw.Draw(img)
+                        write.text( ( (x_Ltop - font_size*0.5) if (img_w - x_Ltop) > font_size*2 else (x_Ltop - font_size*2), 
+                            (y_Ltop - font_size * 1.5) if (y_Ltop - font_size * 1.5) > 0 else (y_Rbtm + font_size*0.5) ), 
+                            items[0], font = font, fill = 'red')
+
+                        #draw boxes
+                        mask = Image.new('1', img.size)
+                        draw = ImageDraw.Draw(mask)
+                        for pix in (rect_thick, -rect_thick+1):
+                            x_Ltop -= pix /2
+                            y_Ltop -= pix /2
+                            x_Rbtm += pix /2
+                            y_Rbtm += pix /2
+                            draw.rectangle( ( (x_Ltop, y_Ltop , x_Rbtm, y_Rbtm) ), fill = (pix+rect_thick-1 and 255) )
+                        img.paste('red', mask = mask)
+                    f.close()
+                ###save img to show
+                imgs.append({"label": label_file.split('0')[-1].split('.')[0] + '(ground truth)', 
+                    "b64": utils.image.embed_image_html(img)})
+
+        count_end += count_end_offset
+    
+    total_offet += count_end - (page + 1) * size
+
+    return flask.render_template(
+        'models/images/explore.html',
+        page=page, size=size, job=job, imgs=imgs, pages=pages, label=label, labels = labels,
+        total_entries=total_entries, db=db, sp_pic_path = sp_pic_path,)
 #################
 
