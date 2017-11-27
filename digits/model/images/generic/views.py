@@ -1123,20 +1123,29 @@ def get_performance_data(job_dir):
 def cal_performance_data():
     from . import cal_map
 
-    if 'gt_lbl_path' in flask.request.form and flask.request.form['gt_lbl_path'] is not None:
-        gt_lbl_path = flask.request.form['gt_lbl_path']
+    if 'sp_pic_dir' in flask.request.form :
+        sp_pic_dir = flask.request.form['sp_pic_dir']
+    else:
+         raise werkzeug.exceptions.BadRequest('pictues path is a required field')
+
+    if 'gt_lbl_dir' in flask.request.form:
+        gt_lbl_dir = flask.request.form['gt_lbl_dir']
     else:
          raise werkzeug.exceptions.BadRequest('pictues path is a required field')
 
     performance_data = {}
-    data_file_path = os.path.join( gt_lbl_path, '..', 'performance_data.txt' )
-    pd_lbl_path = os.path.join( gt_lbl_path, '..', 'labels_prediction' )
-    # print pd_lbl_path
+    data_file_path = os.path.join( sp_pic_dir, '..', 'performance_data.txt' )
+    pd_lbl_dir = os.path.join( sp_pic_dir, '..', 'labels_prediction' )
+    # print pd_lbl_dir
 
-    if not os.path.exists( pd_lbl_path ):
-        raise werkzeug.exceptions.BadRequest('labels_prediction is not found, please get prediction first')
-    if not os.path.exists( data_file_path ):
-        cal_map.calculate_map(gt_lbl_path, pd_lbl_path)
+    if not os.path.exists( sp_pic_dir ):
+        raise werkzeug.exceptions.BadRequest('image dir is not found, please specify a valid folder')
+    if not os.path.exists( pd_lbl_dir ):
+        raise werkzeug.exceptions.BadRequest('prediction labels dir is not found, please get prediction first')
+    if not os.path.exists( gt_lbl_dir ):
+        raise werkzeug.exceptions.BadRequest('ground truth labels dir is not found, please specify a valid folder')
+
+    cal_map.calculate_map(gt_lbl_dir, pd_lbl_dir)
     f = open ( data_file_path )
     all_lines = f.readlines()
     for cls_data_line in all_lines:
@@ -1158,10 +1167,12 @@ def cal_performance_data():
         data_extensions=data_extensions,
         view_extensions=view_extensions,
         related_jobs=None,
-        # ######
+        #######
+        last_sp_pic_dir = sp_pic_dir,
+        last_gt_lbl_dir = gt_lbl_dir,
         performance_heading = 'select a class',
         performance_data = performance_data,
-        # ######
+        #######
     )
 #################
 
@@ -1173,16 +1184,18 @@ def cal_performance_data():
 def get_label():
     from . import save_labels
     from PIL import ImageDraw, Image, ImageFont
-    if 'sp_pic_path' in flask.request.form and flask.request.form['sp_pic_path'] is not None:
-        sp_pic_path = flask.request.form['sp_pic_path']
+    if 'sp_pic_dir' in flask.request.form:
+        sp_pic_dir = flask.request.form['sp_pic_dir']
     else:
          raise werkzeug.exceptions.BadRequest('pictues path is a required field')
 
     ###get img name list
-    img_names = os.listdir(sp_pic_path)
+    if os.path.exists(sp_pic_dir):
+        img_names = os.listdir(sp_pic_dir)
+    else:
+        raise werkzeug.exceptions.BadRequest('plese specify a valild pictues dir')
     ###get img width and height
-    img_path_0 = os.path.join( sp_pic_path, img_names[0] )
-
+    img_path_0 = os.path.join( sp_pic_dir, img_names[0] )
     img = Image.open(img_path_0)
     img_w = img.size[0]
     img_h = img.size[1]
@@ -1192,7 +1205,7 @@ def get_label():
     port = 3380
 
     for img_name in img_names:
-        img_path = os.path.join( sp_pic_path, img_name )
+        img_path = os.path.join( sp_pic_dir, img_name )
         save_labels.get_response_label(img_path, img_w, img_h, ip, port)
 
     return 'finish detection'
@@ -1217,19 +1230,15 @@ def get_label():
 @blueprint.route('/show_sample', methods=['POST', 'GET'])
 def show_sample():
     from PIL import ImageDraw, Image, ImageFont
-    # if 'sp_pic_path' not in flask.request.form or flask.request.form['sp_pic_path'] is None:
-    #     print 'error'
-    if 'sp_pic_path' in flask.request.form and flask.request.form['sp_pic_path'] is not None:
-        sp_pic_path = flask.request.form['sp_pic_path']
-        # print "if--------------------sp_pic_path", sp_pic_path
+
+    if 'sp_pic_dir' in flask.request.form:
+        sp_pic_dir = flask.request.form['sp_pic_dir']
     else:
-        sp_pic_path = flask.request.args.get('sp_pic_path', None)
-        # print "else--------------------sp_pic_path", sp_pic_path
-        # raise werkzeug.exceptions.BadRequest('--------------------sp_pic_path is a required field')
+        sp_pic_dir = flask.request.args.get('sp_pic_dir', None)
 
     # read class labels
     labels = []
-    performance_data_path = os.path.join( sp_pic_path, '..', 'performance_data.txt')
+    performance_data_path = os.path.join( sp_pic_dir, '..', 'performance_data.txt')
     print performance_data_path
     if os.path.exists(performance_data_path):
         f = open(performance_data_path)
@@ -1257,18 +1266,21 @@ def show_sample():
         except ValueError:
             label = None
 
-    img_dir = sp_pic_path
-    fa_label_dir = os.path.join( sp_pic_path, '..', 'labels_false_alarm')
-    md_label_dir = os.path.join( sp_pic_path, '..', 'labels_miss_detect')
-    label_file_dir = os.path.join( sp_pic_path, '..', 'labels_prediction')
+    img_dir = sp_pic_dir
+    fa_label_dir = os.path.join( sp_pic_dir, '..', 'labels_false_alarm')
+    md_label_dir = os.path.join( sp_pic_dir, '..', 'labels_miss_detect')
+    label_file_dir = os.path.join( sp_pic_dir, '..', 'labels_prediction')
 
     if label != None:     
         print 'label', label
         if labels != []:
-            label_file_dir = os.path.join( sp_pic_path, '..', ('labels_' + labels[label]) )
+            label_file_dir = os.path.join( sp_pic_dir, '..', ('labels_' + labels[label]) )
 
     ###get labls name list
-    filename_sets = os.listdir(label_file_dir)
+    if os.path.exists(label_file_dir):
+        filename_sets = os.listdir(label_file_dir)
+    else:
+        raise werkzeug.exceptions.BadRequest('labels_prediction is not found, please get prediction first')
 
     ###
     imgs = []
@@ -1296,16 +1308,16 @@ def show_sample():
         # print 'count', count
 
         for img_suffix in img_suffixes:
-            pd_lbl_path = os.path.join( label_file_dir, label_file )
+            pd_lbl_dir = os.path.join( label_file_dir, label_file )
             img_path = os.path.join( img_dir, label_file.split('.')[0]) + img_suffix
-            if os.path.exists(img_path) and os.path.exists(pd_lbl_path):
+            if os.path.exists(img_path) and os.path.exists(pd_lbl_dir):
                 count_end_offset = 0
 
                 img = Image.open(img_path)
                 img_w = img.size[0]
                 img_h = img.size[1]
                 ###read label file and draw labels
-                f = open(pd_lbl_path)
+                f = open(pd_lbl_dir)
                 lines = f.readlines()
                 num_obj = lines[0]
 
@@ -1408,6 +1420,6 @@ def show_sample():
     return flask.render_template(
         'models/images/explore.html',
         page=page, size=size, job=job, imgs=imgs, pages=pages, label=label, labels = labels,
-        total_entries=total_entries, db=db, sp_pic_path = sp_pic_path,)
+        total_entries=total_entries, db=db, sp_pic_dir = sp_pic_dir,)
 #################
 

@@ -378,13 +378,14 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             <h3>Test Images</h3>
 
                             <div class="form-group">
-                                <label for="sp_pic_path" class="control-label">pictures path</label>
+                                <label for="sp_pic_dir" class="control-label">pictures path</label>
                                 <span name="image_path_explanation"
                                     class="explanation-tooltip glyphicon glyphicon-question-sign"
                                     data-container="body"
                                     title="Can be a path on the server's pictures' folder."
                                 ></span>
-                                <input type="text" id="sp_pic_path" name="sp_pic_path" class="form-control autocomplete_path">
+                                <input type="text" id="sp_pic_dir" name="sp_pic_dir" 
+                                {% if last_sp_pic_dir %} value={{ last_sp_pic_dir }} {% endif %} class="form-control autocomplete_path">
                                 <small>Specify path to sample pictures on server</small>
                             </div>
 
@@ -408,13 +409,14 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                             </div>
 
                             <div class="form-group">
-                                <label for="gt_lbl_path" class="control-label">ground truth labels path<i>(optional)</i></label>
+                                <label for="gt_lbl_dir" class="control-label">ground truth labels path<i>(optional)</i></label>
                                 <span name="label_path_explanation"
                                     class="explanation-tooltip glyphicon glyphicon-question-sign"
                                     data-container="body"
                                     title="Can be a path on the server's ground truth labels' folder, needed if analytical data is wanted"
                                 ></span>
-                                <input type="text" id="gt_lbl_path" name="gt_lbl_path" class="form-control autocomplete_path">
+                                <input type="text" id="gt_lbl_dir" name="gt_lbl_dir" 
+                                {% if last_gt_lbl_dir %} value={{ last_gt_lbl_dir }} {% endif %} class="form-control autocomplete_path">
                                 <small>Specify path to ground turth labels on server</small><br>
                             </div>
 

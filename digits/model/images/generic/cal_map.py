@@ -1,5 +1,6 @@
 import os
 import PIL
+import shutil
 # pred_label_file_dir = './Labels'
 # gr_truth_label_file_dir = './Labels'
 # false_alarm_dir = './labels_false_alarm' #dir to save false alarm labels
@@ -26,10 +27,10 @@ def box_error(list_predict, list_truth, img_width, img_height):
 	return sum_error
 
 def cal_average_rate(name, dict_rate_list, dict_calss_labels, dict_class_rate):
-	print ''
+
 	for key in dict_calss_labels:
 		average_rate = sum( dict_rate_list[key] ) / len( dict_rate_list[key] )
-		print name.ljust(17), key.ljust(20), average_rate
+		# print name.ljust(17), key.ljust(20), average_rate
 
 		if key in dict_class_rate:
 			dict_class_rate[key].append( ( name.ljust(17) + str(average_rate) ) )
@@ -67,7 +68,6 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 			count_dict(items[0], dict_calss_labels)
 		gr_truth_dict[file] = label
 		f.close()
-	print dict_calss_labels
 	#####  save perdict label to dict
 
 	### get filepath
@@ -141,7 +141,9 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 
 			### record and write down the false_alarm labels
 
-			if not os.path.exists(false_alarm_dir):
+			if os.path.exists(false_alarm_dir):
+				shutil.rmtree(false_alarm_dir)
+			else:
 				os.mkdir(false_alarm_dir)
 			n = 0
 			for obj_det in predict_dict[key]:
@@ -157,7 +159,9 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 				f2.close()
 
 			### record and write down the miss_detect labels
-			if not os.path.exists(miss_det_dir):
+			if os.path.exists(miss_det_dir):
+				shutil.rmtree(miss_det_dir)
+			else:
 				os.mkdir(miss_det_dir)
 			n = 0
 			for obj_det in predict_dict[key]:
