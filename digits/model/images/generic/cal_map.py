@@ -6,7 +6,7 @@ import shutil
 # false_alarm_dir = './labels_false_alarm' #dir to save false alarm labels
 # miss_det_dir = './labels_miss_detect' #dir to save miss detection labels
 use_same_dir = False #use same dir for pred_label_file_dir and gr_truth_label_file_dir for testing
-threshold_error = 10 #pixel, thresold to decide whether a detection is correct
+threshold_error = 50 #pixel, thresold to decide whether a detection is correct
 # sum of error between detectd object and ground truth ojbect in height and width
 
 
@@ -30,7 +30,7 @@ def cal_average_rate(name, dict_rate_list, dict_calss_labels, dict_class_rate):
 
 	for key in dict_calss_labels:
 		average_rate = sum( dict_rate_list[key] ) / len( dict_rate_list[key] )
-		# print name.ljust(17), key.ljust(20), average_rate
+		print name.ljust(17), key.ljust(20), average_rate
 
 		if key in dict_class_rate:
 			dict_class_rate[key].append( ( name.ljust(17) + str(average_rate) ) )
@@ -44,14 +44,15 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 	img_w = 1152#img.size[0]
 	img_h = 648#img.size[1]
 
+
 	pred_label_file_dir = pd_lbl_path
 	gr_truth_label_file_dir = gt_lbl_path
-	false_alarm_dir = gt_lbl_path + '/../'  + 'labels_false_alarm' #dir to save false alarm labels
-	miss_det_dir = gt_lbl_path + '/../' + 'labels_miss_detect' #dir to save miss detection labels
-	performance_data_dir = gt_lbl_path + '/../' + 'performance_data.txt'
-	##### save ground label to dict
+	root_dir = gt_lbl_path + '/..'
+	false_alarm_dir = root_dir + '/'  + 'labels_false_alarm' #dir to save false alarm labels
+	miss_det_dir = root_dir + '/' + 'labels_miss_detect' #dir to save miss detection labels
+	performance_data_dir = root_dir + '/' + 'performance_data.txt'
 
-	### get filepath
+	##### save ground label to dict
 	filename_set = os.listdir(gr_truth_label_file_dir)
 	gr_truth_dict = {}
 	filenames = sorted(filename_set)
@@ -64,13 +65,13 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 		label = []
 		for n in range(1, int(num_obj)+1):
 			items = lines[n].split()
-			label.append([items[0]] + map(float, items[1:]))
-			count_dict(items[0], dict_calss_labels)
+			label.append( [ items[0] ] + map(float, items[1:]) )
+			count_dict( items, dict_calss_labels ) # record all classes
 		gr_truth_dict[file] = label
 		f.close()
 	#####  save perdict label to dict
-
-	### get filepath
+	print dict_calss_labels
+	##### save predicted label to dict
 	filename_set2 = os.listdir(pred_label_file_dir)
 	predict_dict = {}
 	filenames2 = sorted(filename_set2)
@@ -85,19 +86,34 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 			label.append([items[0]] + map(float, items[1:]))
 		predict_dict[file] = label
 		f.close()
-
-	# record all classes
-	dict_calss_labels = {}
-	for key in gr_truth_dict:
-		for gt_obj in gr_truth_dict[key]:
-				count_dict(gt_obj, dict_calss_labels)
-	print dict_calss_labels
-
+	
 	dict_precision_rate = {k:[] for k in dict_calss_labels}
 	dict_reacall_rate = {k:[] for k in dict_calss_labels}
 	dict_miss_detect_rate = {k:[] for k in dict_calss_labels}
 	dict_false_alarm_rate = {k:[] for k in dict_calss_labels}
 
+	##### clean old labels folders and creat new one #####
+	if os.path.exists(false_alarm_dir):
+		shutil.rmtree(false_alarm_dir)
+	os.mkdir(false_alarm_dir)
+
+	if os.path.exists(miss_det_dir):
+		shutil.rmtree(miss_det_dir)
+	os.mkdir(miss_det_dir)
+
+	list_dirname = []
+	for dirpaths,dirnames,filenames in os.walk(root_dir):
+		list_dirname = dirnames
+		break
+	for dirname in list_dirname:
+		if 'class' in dirname.split('_'):
+			if os.path.exists(root_dir + '/' + dirname):
+				shutil.rmtree(root_dir + '/' + dirname)
+			print dirname
+	for key in dict_calss_labels:
+		os.mkdir(root_dir + '/' + 'labels_class_' + key)
+
+	### find matched objects
 	for key in gr_truth_dict:
 		# print key
 		if key in predict_dict:
@@ -106,9 +122,7 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 			dict_false_alarm = {k:0 for k in dict_calss_labels}
 
 			dict_save_by_label = {}
-
 			for obj_gt in gr_truth_dict[key]:
-
 				#save key by label
 				if obj_gt[0] not in dict_save_by_label:
 					dict_save_by_label[obj_gt[0]] = [obj_gt]
@@ -130,9 +144,7 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 
 			### record and write down labels by class
 			for key2 in dict_save_by_label:
-				dir_by_class = gt_lbl_path + '/../' + 'labels_' + key2
-				if not os.path.exists(dir_by_class):
-					os.mkdir(dir_by_class)
+				dir_by_class = root_dir + '/' + 'labels_class_' + key2
 				f = open(dir_by_class + '/' + key, 'w')
 				f.write( str( len( dict_save_by_label[key2] ) )  + '\n')
 				for obj_by_class in dict_save_by_label[key2]:
@@ -140,11 +152,6 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 				f.close()
 
 			### record and write down the false_alarm labels
-
-			if os.path.exists(false_alarm_dir):
-				shutil.rmtree(false_alarm_dir)
-			else:
-				os.mkdir(false_alarm_dir)
 			n = 0
 			for obj_det in predict_dict[key]:
 				if obj_det[0] != 'matched':
@@ -159,10 +166,6 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 				f2.close()
 
 			### record and write down the miss_detect labels
-			if os.path.exists(miss_det_dir):
-				shutil.rmtree(miss_det_dir)
-			else:
-				os.mkdir(miss_det_dir)
 			n = 0
 			for obj_det in predict_dict[key]:
 				if obj_det[0] != 'matched':
@@ -180,7 +183,6 @@ def calculate_map(gt_lbl_path, pd_lbl_path):
 			# print "dict_miss_detect", dict_miss_detect
 			# print "dict_false_alarm", dict_false_alarm
 			# raw_input('...')
-
 			### calculate precision, recall
 			for key2 in dict_calss_labels:
 				if ( dict_precise[key2] + dict_false_alarm[key2] != 0 ):

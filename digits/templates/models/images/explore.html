@@ -19,42 +19,42 @@
     </div>
     <div class="row">
         <ul class="list-unstyled list-inline">
-            <li><a href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&sp_pic_path={{sp_pic_path}}">Show all images</a></li>
+            <li><a href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&sp_pic_dir={{sp_pic_dir}}">Show all images</a></li>
         {% if labels %}
             <li>or</li>
             <li><h5>filter by class:</h5></li>
             {% for l in labels %}
-                <li><a {% if label==loop.index0 %}class="active"{% endif %} href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&label={{loop.index0}}&sp_pic_path={{sp_pic_path}}">{{l}}</a></li>
+                <li><a {% if label==loop.index0 %}class="active"{% endif %} href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&label={{loop.index0}}&sp_pic_dir={{sp_pic_dir}}">{{l}}</a></li>
             {% endfor %}
         {% endif %}
         </ul>
     </div>
     <div class="row">Items per page: 
-    <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=10&label={{label}}&sp_pic_path={{sp_pic_path}}" {% if size==10 %}class="active"{% endif %}>10</a> - 
-    <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=25&label={{label}}&sp_pic_path={{sp_pic_path}}" {% if size==25 %}class="active"{% endif %}>25</a> - 
-    <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=50&label={{label}}&sp_pic_path={{sp_pic_path}}" {% if size==50 %}class="active"{% endif %}>50</a> - 
-    <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=100&label={{label}}&sp_pic_path={{sp_pic_path}}" {% if size==100 %}class="active"{% endif %}>100</a>
+    <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=10&label={{label}}&sp_pic_dir={{sp_pic_dir}}" {% if size==10 %}class="active"{% endif %}>10</a> - 
+    <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=25&label={{label}}&sp_pic_dir={{sp_pic_dir}}" {% if size==25 %}class="active"{% endif %}>25</a> - 
+    <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=50&label={{label}}&sp_pic_dir={{sp_pic_dir}}" {% if size==50 %}class="active"{% endif %}>50</a> - 
+    <a href="?job_id={{job.id()}}&page=0&db={{db}}&size=100&label={{label}}&sp_pic_dir={{sp_pic_dir}}" {% if size==100 %}class="active"{% endif %}>100</a>
     </div>
     <div class="row">
     <ul class="pagination">
         <li {% if page == 0 %}class="disabled"{%endif%}>
-          <a href="?job_id={{job.id()}}&page={{ page - 1 }}&size={{size}}&db={{db}}&label={{label}}&sp_pic_path={{sp_pic_path}}" aria-label="Previous">
+          <a href="?job_id={{job.id()}}&page={{ page - 1 }}&size={{size}}&db={{db}}&label={{label}}&sp_pic_dir={{sp_pic_dir}}" aria-label="Previous">
             <span aria-hidden="true">&laquo;</span>
           </a>
         </li>
         {% if pages[0] != 0 %}
-        <li><a href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&label={{label}}&sp_pic_path={{sp_pic_path}}">0</a></li>
+        <li><a href="?job_id={{job.id()}}&page=0&size={{size}}&db={{db}}&label={{label}}&sp_pic_dir={{sp_pic_dir}}">0</a></li>
         <li class="disabled"><a href="#">...</a></li>
         {% endif %}
         {% for p in pages %}
-        <li {% if p == page %}class="active"{% endif %}><a href="?job_id={{job.id()}}&page={{ p }}&size={{size}}&db={{db}}&label={{label}}&sp_pic_path={{sp_pic_path}}">{{p}}</a></li>
+        <li {% if p == page %}class="active"{% endif %}><a href="?job_id={{job.id()}}&page={{ p }}&size={{size}}&db={{db}}&label={{label}}&sp_pic_dir={{sp_pic_dir}}">{{p}}</a></li>
         {% endfor %}
         {% if pages[-1] != (total_entries-1)//size %}
         <li class="disabled"><a href="#">...</a></li>
-        <li><a href="?job_id={{job.id()}}&page={{(total_entries-1)//size}}&size={{size}}&db={{db}}&label={{label}}&sp_pic_path={{sp_pic_path}}">{{(total_entries-1)//size}}</a></li>
+        <li><a href="?job_id={{job.id()}}&page={{(total_entries-1)//size}}&size={{size}}&db={{db}}&label={{label}}&sp_pic_dir={{sp_pic_dir}}">{{(total_entries-1)//size}}</a></li>
         {% endif %}
         {% if page != (total_entries-1)//size %}<li>
-          <a href="?job_id={{job.id()}}&page={{ page + 1 }}&size={{size}}&db={{db}}&label={{label}}&sp_pic_path={{sp_pic_path}}" aria-label="Next">
+          <a href="?job_id={{job.id()}}&page={{ page + 1 }}&size={{size}}&db={{db}}&label={{label}}&sp_pic_dir={{sp_pic_dir}}" aria-label="Next">
             <span aria-hidden="true">&raquo;</span>
           </a>
         </li>{%endif %}
