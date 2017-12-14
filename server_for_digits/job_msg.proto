@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+package TrainingMsg;
+
+message Request {
+	required string job_id = 1; //job id
+	required Command command = 2; //request action
+	optional string arguments = 3; //terminal arguments
+	optional string solver = 4; //solver.prototxt
+	optional string train_val_net = 5; //train.prototxt
+	optional string test_net = 6; //test.prototxt
+
+	enum Command{
+		TRAIN = 0;
+		ABORT = 1;
+		DELETE = 2;
+	}
+}
+
+message Response {
+	required string line_num = 1; //lines number in this buffer
+	repeated string log_line = 2; //each line of log
+	required bool log_end = 3; //end of the log
+	optional string error = 4; //return error if happens
+}
