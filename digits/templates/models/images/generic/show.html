@@ -376,7 +376,16 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                     <div class="form-group">
                         <div class="col-sm-6">
                             <h3>Test Images</h3>
-
+                            <div>
+                                <div class="form-group">
+                                    <button name="upload-db-btn"
+                                        formaction="{{url_for('digits.model.images.generic.views.http_server')}}"
+                                        formtarget="_blank"
+                                        class="btn btn-info btn-file">
+                                        Upload Sample Set
+                                    </button>
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label for="sp_pic_dir" class="control-label">pictures path</label>
                                 <span name="image_path_explanation"
@@ -398,14 +407,7 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
                                     class="btn btn-primary">
                                     Get Labels
                                 </button>
-                                <button name="infer-db-btn"
-                                    formaction="{{url_for('digits.model.images.generic.views.show_sample', job_id=job.id())}}"
-                                    formmethod="post"
-                                    formenctype="multipart/form-data"
-                                    formtarget="_blank"
-                                    class="btn btn-info btn-file">
-                                    Show Images
-                                </button>
+                                
                             </div>
 
                             <div class="form-group">
@@ -422,12 +424,14 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
 
                             <div class="form-group">
                                 <button name="infer-db-btn"
-                                    formaction="{{url_for('digits.model.images.generic.views.cal_performance_data', job_id=job.id())}}"
+                                    formaction="{{url_for('digits.model.images.generic.views.show_sample', job_id=job.id())}}"
                                     formmethod="post"
                                     formenctype="multipart/form-data"
-                                    class="btn btn-primary">
-                                    Get Performance
+                                    formtarget="_blank"
+                                    class="btn btn-info btn-file">
+                                    Show Images
                                 </button>
+                                
                             </div>
 
 
@@ -436,6 +440,15 @@ updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescap
 
                         <div class="col-sm-6">
                             <h3>Performance</h3>
+                            <div class="form-group">
+                                <button name="infer-db-btn"
+                                    formaction="{{url_for('digits.model.images.generic.views.cal_performance_data', job_id=job.id())}}"
+                                    formmethod="post"
+                                    formenctype="multipart/form-data"
+                                    class="btn btn-primary">
+                                    Get Performance
+                                </button>
+                            </div>
                             <div class="form-group">
                                 <label for="performance_class" class="control-label">class statistical data</label>
                                 <select id="performance_class" name="performance_class" class="form-control" data-edit-select="None" >

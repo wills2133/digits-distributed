@@ -26,6 +26,9 @@ function syncAceEditor(){
 }
 </script>
 
+
+
+
 <form onsubmit="syncAceEditor();" id="model-form" action="{{url_for('digits.model.images.generic.views.create', extension_id=extension_id)}}" enctype="multipart/form-data" method="post">
     {{ form.hidden_tag() }}
 
@@ -220,6 +223,8 @@ $("#solver_type").change(showHideSolverSpecificOptions);
 $("#show-advanced-lr-options").click(showHideAdvancedLROptions);
 showHideAdvancedLROptions();
 showHideSolverSpecificOptions();
+
+
                 </script>
 
                 <div id="advanced-lr-options" style="display:none;">
@@ -380,6 +385,36 @@ showHideSolverSpecificOptions();
                 </div>
             </div>
         </div>
+
+<!-- //////////////////////////////////////////////////////////////////////////// -->
+
+        <div class="col-sm-4">
+            <div class="col" id="train-server">
+                <div class="well">
+                    <h4>Training Server Address</h4>
+                    <br>
+                    <div class="form-group{{mark_errors([form.train_server_ip])}}">
+                        {{form.train_server_ip.label}}
+                        {{form.train_server_ip.tooltip}}
+                        <small class="pull-right">
+                            {{form.train_server_ip.small_text}}
+                        </small>
+                        {{form.train_server_ip(class='form-control', placeholder='xxx.xxx.xxx.xxx')}}
+                    </div>
+                    <div class="form-group{{mark_errors([form.train_server_port])}}">
+                        {{form.train_server_port.label}}
+                        {{form.train_server_port.tooltip}}
+                        <small class="pull-right">
+                            {{form.train_server_port.small_text}}
+                        </small>
+                        {{form.train_server_ip(class='form-control', placeholder='xxxx')}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- //////////////////////////////////////////////////////////////////////////// -->
+
         <div class="col-sm-4">
             <div class="well" id="data-transformation">
                 <h4>Data Transformations</h4>
@@ -399,6 +434,7 @@ showHideSolverSpecificOptions();
                 {% include "/models/data_augmentation.html" %}
             </div>
         </div>
+
     </div>
 
     <hr>

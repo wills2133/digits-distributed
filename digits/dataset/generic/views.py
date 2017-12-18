@@ -215,3 +215,11 @@ def summary(job):
     Return a short HTML summary of a GenericDatasetJob
     """
     return flask.render_template('datasets/generic/summary.html', dataset=job)
+
+@blueprint.route('/http_server.json', methods=['POST'])
+@blueprint.route('/http_server', methods=['POST', 'GET'])
+def http_server():
+    from flask import redirect
+    return redirect('http://localhost:1022/')
+
+

@@ -157,6 +157,25 @@ class ModelForm(Form):
         ],
         tooltip="How many images to process at once. If blank, values are used from the network definition."
     )
+
+    train_server_ip = utils.forms.StringField(
+        'Training server ip',
+        validators=[
+            validate_file_exists,
+            validate_py_ext
+        ],
+        tooltip="Training server ip in format 'xxx.xxx.xxx.xxx'."
+    )
+
+    train_server_port = utils.forms.StringField(
+        'Training server port',
+        validators=[
+            validate_file_exists,
+            validate_py_ext
+        ],
+        tooltip="Training server port in format 'xxxx'."
+    )
+
     ##########
 
     batch_accumulation = utils.forms.IntegerField(

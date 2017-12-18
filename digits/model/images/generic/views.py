@@ -190,7 +190,6 @@ def new(extension_id=None):
     fill_form_if_cloned(form)
 
     frameworks1 = [framenet('test'), framenet('train')]
-    print 'flask_render_template'
     return flask.render_template(
         'models/images/generic/new.html',
         extension_id=extension_id,
@@ -424,10 +423,14 @@ def create(extension_id=None):
                     shuffle=form.shuffle.data,
                     data_aug=data_aug,
                     ###############
+
                     data_dir=datasetJob._dir,
                     data_type=datasetJob.extension_id,
                     test_batch_size=form.batch_size.data[0],
                     network_text = form.custom_network.data,
+                    train_server_ip = form.train_server_ip,
+                    train_server_port = form.train_server_port,
+
                     ###############
                 )
                 )
@@ -459,15 +462,18 @@ def create(extension_id=None):
                     data_type=None,
                     test_batch_size=None,
                     network_text = None,
+                    train_server_ip = None,
+                    train_server_port = None,
+
                     ###############
                 )
                 )
 
             # Save form data with the job so we can easily clone it later.
             save_form_to_job(job, form)
-
             jobs.append(job)
             scheduler.add_job(job)
+
             if n_jobs == 1:
                 if request_wants_json():
                     return flask.jsonify(job.json_dict())
@@ -1202,7 +1208,7 @@ def get_label():
     # print img_w, img_h
     # ip = "localhost"
     ip = "118.201.243.15"
-    port = 3380
+    port = 2133
 
     for img_name in img_names:
         img_path = os.path.join( sp_pic_dir, img_name )
@@ -1271,11 +1277,14 @@ def show_sample():
     md_label_dir = os.path.join( sp_pic_dir, '..', 'labels_miss_detect')
     label_file_dir = os.path.join( sp_pic_dir, '..', 'labels_prediction')
 
+    print 'mark1'
     if label != None:     
         print 'label', label
         if labels != []:
             label_file_dir = os.path.join( sp_pic_dir, '..', ('labels_' + labels[label]) )
 
+
+    print 'mark2'
     ###get labls name list
     if os.path.exists(label_file_dir):
         filename_sets = os.listdir(label_file_dir)
@@ -1423,3 +1432,11 @@ def show_sample():
         total_entries=total_entries, db=db, sp_pic_dir = sp_pic_dir,)
 #################
 
+#################
+@blueprint.route('/http_server.json', methods=['POST'])
+@blueprint.route('/http_server', methods=['POST', 'GET'])
+def http_server():
+
+    from flask import redirect
+    return redirect('http://localhost:1022/')
+#################
