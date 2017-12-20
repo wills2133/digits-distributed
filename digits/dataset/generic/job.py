@@ -39,6 +39,7 @@ class GenericDatasetJob(DatasetJob):
         self.pickver_job_dataset_extension = PICKLE_VERSION
 
         # create tasks
+        print "------self.extension_id", self.extension_id
         # for stage in [constants.TRAIN_DB, constants.VAL_DB, constants.TEST_DB]:
         for stage in [constants.TRAIN_DB]:
             self.tasks.append(tasks.CreateGenericDbTask(

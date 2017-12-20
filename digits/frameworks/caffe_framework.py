@@ -13,6 +13,7 @@ from .framework import Framework
 import digits
 from digits.config import config_value
 from digits.model.tasks import CaffeTrainTask
+from digits.model.tasks import DistributedTrainTask
 from digits.utils import subclass, override, parse_version
 
 
@@ -62,7 +63,12 @@ class CaffeFramework(Framework):
         """
         create train task
         """
-        return CaffeTrainTask(framework_id=self.framework_id, **kwargs)
+        if kwargs['data_type'] is not None:
+            print '-----------self.data_type',  kwargs['data_type']
+            print 'return DistributedTrainTask'
+            return DistributedTrainTask(framework_id=self.framework_id, **kwargs)
+        else:
+            return CaffeTrainTask(framework_id=self.framework_id, **kwargs)
 
     @override
     def validate_network(self, data):

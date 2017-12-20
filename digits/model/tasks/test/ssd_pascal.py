@@ -86,129 +86,8 @@ test_data = "examples/VOC0712/VOC0712_test_lmdb"
 resize_width = 300
 resize_height = 300
 resize = "{}x{}".format(resize_width, resize_height)
-batch_sampler = [
-        {
-                'sampler': {
-                        },
-                'max_trials': 1,
-                'max_sample': 1,
-        },
-        {
-                'sampler': {
-                        'min_scale': 0.3,
-                        'max_scale': 1.0,
-                        'min_aspect_ratio': 0.5,
-                        'max_aspect_ratio': 2.0,
-                        },
-                'sample_constraint': {
-                        'min_jaccard_overlap': 0.1,
-                        },
-                'max_trials': 50,
-                'max_sample': 1,
-        },
-        {
-                'sampler': {
-                        'min_scale': 0.3,
-                        'max_scale': 1.0,
-                        'min_aspect_ratio': 0.5,
-                        'max_aspect_ratio': 2.0,
-                        },
-                'sample_constraint': {
-                        'min_jaccard_overlap': 0.3,
-                        },
-                'max_trials': 50,
-                'max_sample': 1,
-        },
-        {
-                'sampler': {
-                        'min_scale': 0.3,
-                        'max_scale': 1.0,
-                        'min_aspect_ratio': 0.5,
-                        'max_aspect_ratio': 2.0,
-                        },
-                'sample_constraint': {
-                        'min_jaccard_overlap': 0.5,
-                        },
-                'max_trials': 50,
-                'max_sample': 1,
-        },
-        {
-                'sampler': {
-                        'min_scale': 0.3,
-                        'max_scale': 1.0,
-                        'min_aspect_ratio': 0.5,
-                        'max_aspect_ratio': 2.0,
-                        },
-                'sample_constraint': {
-                        'min_jaccard_overlap': 0.7,
-                        },
-                'max_trials': 50,
-                'max_sample': 1,
-        },
-        {
-                'sampler': {
-                        'min_scale': 0.3,
-                        'max_scale': 1.0,
-                        'min_aspect_ratio': 0.5,
-                        'max_aspect_ratio': 2.0,
-                        },
-                'sample_constraint': {
-                        'min_jaccard_overlap': 0.9,
-                        },
-                'max_trials': 50,
-                'max_sample': 1,
-        },
-        {
-                'sampler': {
-                        'min_scale': 0.3,
-                        'max_scale': 1.0,
-                        'min_aspect_ratio': 0.5,
-                        'max_aspect_ratio': 2.0,
-                        },
-                'sample_constraint': {
-                        'max_jaccard_overlap': 1.0,
-                        },
-                'max_trials': 50,
-                'max_sample': 1,
-        },
-        ]
-train_transform_param = {
-        'mirror': True,
-        'mean_value': [104, 117, 123],
-        'resize_param': {
-                'prob': 1,
-                'resize_mode': P.Resize.WARP,
-                'height': resize_height,
-                'width': resize_width,
-                'interp_mode': [
-                        P.Resize.LINEAR,
-                        P.Resize.AREA,
-                        P.Resize.NEAREST,
-                        P.Resize.CUBIC,
-                        P.Resize.LANCZOS4,
-                        ],
-                },
-        'distort_param': {
-                'brightness_prob': 0.5,
-                'brightness_delta': 32,
-                'contrast_prob': 0.5,
-                'contrast_lower': 0.5,
-                'contrast_upper': 1.5,
-                'hue_prob': 0.5,
-                'hue_delta': 18,
-                'saturation_prob': 0.5,
-                'saturation_lower': 0.5,
-                'saturation_upper': 1.5,
-                'random_order_prob': 0.0,
-                },
-        'expand_param': {
-                'prob': 0.5,
-                'max_expand_ratio': 4.0,
-                },
-        'emit_constraint': {
-            'emit_type': caffe_pb2.EmitConstraint.CENTER,
-            }
-        }
+
+
 test_transform_param = {
         'mean_value': [104, 117, 123],
         'resize_param': {
@@ -303,7 +182,8 @@ min_dim = 300
 # conv7_2 ==> 5 x 5
 # conv8_2 ==> 3 x 3
 # conv9_2 ==> 1 x 1
-mbox_source_layers = ['conv4_3', 'fc7', 'conv6_2', 'conv7_2', 'conv8_2', 'conv9_2']
+# mbox_source_layers = ['conv4_3', 'fc7', 'conv6_2', 'conv7_2', 'conv8_2', 'conv9_2']
+mbox_source_layers = []
 # in percent %
 min_ratio = 20
 max_ratio = 90
@@ -313,12 +193,15 @@ max_sizes = []
 for ratio in xrange(min_ratio, max_ratio + 1, step):
   min_sizes.append(min_dim * ratio / 100.)
   max_sizes.append(min_dim * (ratio + step) / 100.)
-min_sizes = [min_dim * 10 / 100.] + min_sizes
-max_sizes = [min_dim * 20 / 100.] + max_sizes
-steps = [8, 16, 32, 64, 100, 300]
-aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
+# min_sizes = [min_dim * 10 / 100.] + min_sizes
+# max_sizes = [min_dim * 20 / 100.] + max_sizes
+steps = []
+# steps = [8, 16, 32, 64, 100, 300]
+aspect_ratios = []
+# aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
 # L2 normalize conv4_3.
-normalizations = [20, -1, -1, -1, -1, -1]
+normalizations = []
+# normalizations = [20, -1, -1, -1, -1, -1]
 # variance used to encode/decode prior bboxes.
 if code_type == P.PriorBox.CENTER_SIZE:
   prior_variance = [0.1, 0.1, 0.2, 0.2]
@@ -376,29 +259,153 @@ test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 # make_if_not_exist(snapshot_dir)
 
 def CreateTrainNet(train_net_file2, train_data2, batch_size_per_device2):
+    batch_sampler = [
+            {
+                    'sampler': {
+                            },
+                    'max_trials': 1,
+                    'max_sample': 1,
+            },
+            {
+                    'sampler': {
+                            'min_scale': 0.3,
+                            'max_scale': 1.0,
+                            'min_aspect_ratio': 0.5,
+                            'max_aspect_ratio': 2.0,
+                            },
+                    'sample_constraint': {
+                            'min_jaccard_overlap': 0.1,
+                            },
+                    'max_trials': 50,
+                    'max_sample': 1,
+            },
+            {
+                    'sampler': {
+                            'min_scale': 0.3,
+                            'max_scale': 1.0,
+                            'min_aspect_ratio': 0.5,
+                            'max_aspect_ratio': 2.0,
+                            },
+                    'sample_constraint': {
+                            'min_jaccard_overlap': 0.3,
+                            },
+                    'max_trials': 50,
+                    'max_sample': 1,
+            },
+            {
+                    'sampler': {
+                            'min_scale': 0.3,
+                            'max_scale': 1.0,
+                            'min_aspect_ratio': 0.5,
+                            'max_aspect_ratio': 2.0,
+                            },
+                    'sample_constraint': {
+                            'min_jaccard_overlap': 0.5,
+                            },
+                    'max_trials': 50,
+                    'max_sample': 1,
+            },
+            {
+                    'sampler': {
+                            'min_scale': 0.3,
+                            'max_scale': 1.0,
+                            'min_aspect_ratio': 0.5,
+                            'max_aspect_ratio': 2.0,
+                            },
+                    'sample_constraint': {
+                            'min_jaccard_overlap': 0.7,
+                            },
+                    'max_trials': 50,
+                    'max_sample': 1,
+            },
+            {
+                    'sampler': {
+                            'min_scale': 0.3,
+                            'max_scale': 1.0,
+                            'min_aspect_ratio': 0.5,
+                            'max_aspect_ratio': 2.0,
+                            },
+                    'sample_constraint': {
+                            'min_jaccard_overlap': 0.9,
+                            },
+                    'max_trials': 50,
+                    'max_sample': 1,
+            },
+            {
+                    'sampler': {
+                            'min_scale': 0.3,
+                            'max_scale': 1.0,
+                            'min_aspect_ratio': 0.5,
+                            'max_aspect_ratio': 2.0,
+                            },
+                    'sample_constraint': {
+                            'max_jaccard_overlap': 1.0,
+                            },
+                    'max_trials': 50,
+                    'max_sample': 1,
+            },
+            ]
+    train_transform_param = {
+            'mirror': True,
+            'mean_value': [104, 117, 123],
+            'resize_param': {
+                    'prob': 1,
+                    'resize_mode': P.Resize.WARP,
+                    'height': resize_height,
+                    'width': resize_width,
+                    'interp_mode': [
+                            P.Resize.LINEAR,
+                            P.Resize.AREA,
+                            P.Resize.NEAREST,
+                            P.Resize.CUBIC,
+                            P.Resize.LANCZOS4,
+                            ],
+                    },
+            'distort_param': {
+                    'brightness_prob': 0.5,
+                    'brightness_delta': 32,
+                    'contrast_prob': 0.5,
+                    'contrast_lower': 0.5,
+                    'contrast_upper': 1.5,
+                    'hue_prob': 0.5,
+                    'hue_delta': 18,
+                    'saturation_prob': 0.5,
+                    'saturation_lower': 0.5,
+                    'saturation_upper': 1.5,
+                    'random_order_prob': 0.0,
+                    },
+            'expand_param': {
+                    'prob': 0.5,
+                    'max_expand_ratio': 4.0,
+                    },
+            'emit_constraint': {
+                'emit_type': caffe_pb2.EmitConstraint.CENTER,
+                }
+            }
+
     # Create train net.
     net = caffe.NetSpec()
     net.data, net.label = CreateAnnotatedDataLayer(train_data2, batch_size=batch_size_per_device2,
             train=True, output_label=True, label_map_file=label_map_file,
             transform_param=train_transform_param, batch_sampler=batch_sampler)
-
+    print (net.__dict__)
     VGGNetBody(net, from_layer='data', fully_conv=True, reduced=True, dilated=True,
         dropout=False)
+    print (net.__dict__)
+    # AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
+    # mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
+    #         use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
+    #         aspect_ratios=aspect_ratios, steps=steps, normalizations=normalizations,
+    #         num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
+    #         prior_variance=prior_variance, kernel_size=3, pad=1, lr_mult=lr_mult)
 
-    AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
-
-    mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
-            use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
-            aspect_ratios=aspect_ratios, steps=steps, normalizations=normalizations,
-            num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
-            prior_variance=prior_variance, kernel_size=3, pad=1, lr_mult=lr_mult)
-
-    # Create the MultiBoxLossLayer.
-    name = "mbox_loss"
-    mbox_layers.append(net.label)
-    net[name] = L.MultiBoxLoss(*mbox_layers, multibox_loss_param=multibox_loss_param,
-            loss_param=loss_param, include=dict(phase=caffe_pb2.Phase.Value('TRAIN')),
-            propagate_down=[True, True, False, False])
+    # # Create the MultiBoxLossLayer.
+    # name = "mbox_loss"
+    # mbox_layers.append(net.label)
+    # print (net.vals())
+    # net[name] = L.MultiBoxLoss(*mbox_layers, multibox_loss_param=multibox_loss_param,
+    #         loss_param=loss_param, include=dict(phase=caffe_pb2.Phase.Value('TRAIN')),
+    #         propagate_down=[True, True, False, False])
 
     with open(train_net_file2, 'w') as f:
         print('name: "{}_train"'.format(model_name), file=f)
@@ -443,10 +450,10 @@ def CreateTestNet(test_net_file2, test_data2, test_batch_size2, label_map_file2,
             train=False, output_label=True, label_map_file=label_map_file2,
             transform_param=test_transform_param)
 
-    VGGNetBody(net, from_layer='data', fully_conv=True, reduced=True, dilated=True,
-        dropout=False)
+    # VGGNetBody(net, from_layer='data', fully_conv=True, reduced=True, dilated=True,
+    #     dropout=False)
 
-    AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
+    # AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 
     mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
             use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,

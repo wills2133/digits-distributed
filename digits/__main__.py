@@ -54,6 +54,9 @@ def main():
     import digits.log
     import digits.webapp
 
+    # from http_server import http_server
+    # http_server.run_BaseHTTPServer()
+
     try:
         if not digits.webapp.scheduler.start():
             print 'ERROR: Scheduler would not start'

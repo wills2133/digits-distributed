@@ -229,10 +229,8 @@ def create(extension_id=None):
     
     if not form.validate_on_submit():
         if request_wants_json():
-            print 'request_wants_json'
             return flask.jsonify({'errors': form.errors}), 400
         else:
-            print 'request_wants_json_not'
             return flask.render_template(
                 'models/images/generic/new.html',
                 extension_id=extension_id,
@@ -399,75 +397,81 @@ def create(extension_id=None):
                 (flask.request.files[form.python_layer_client_file.name]
                  if form.python_layer_client_file.name in flask.request.files
                  else ''), form.python_layer_server_file.data)
-            try:
-                job.tasks.append(fw.create_train_task(
-                    job=job,
-                    dataset=datasetJob,
-                    train_epochs=form.train_epochs.data,
-                    snapshot_interval=form.snapshot_interval.data,
-                    learning_rate=form.learning_rate.data[0],
-                    lr_policy=policy,
-                    gpu_count=gpu_count,
-                    selected_gpus=selected_gpus,
-                    batch_size=form.batch_size.data[0],
-                    batch_accumulation=form.batch_accumulation.data,
-                    val_interval=form.val_interval.data,
-                    traces_interval=form.traces_interval.data,
-                    pretrained_model=pretrained_model,
-                    crop_size=form.crop_size.data,
-                    use_mean=form.use_mean.data,
-                    network=network,
-                    random_seed=form.random_seed.data,
-                    solver_type=form.solver_type.data,
-                    rms_decay=form.rms_decay.data,
-                    shuffle=form.shuffle.data,
-                    data_aug=data_aug,
-                    ###############
 
-                    data_dir=datasetJob._dir,
-                    data_type=datasetJob.extension_id,
-                    test_batch_size=form.batch_size.data[0],
-                    network_text = form.custom_network.data,
-                    train_server_ip = form.train_server_ip,
-                    train_server_port = form.train_server_port,
+            if datasetJob.extension_id != None:
+                try:
+                    job.tasks.append(fw.create_train_task(
+                        job=job,
+                        dataset=datasetJob,
+                        train_epochs=form.train_epochs.data,
+                        snapshot_interval=form.snapshot_interval.data,
+                        learning_rate=form.learning_rate.data[0],
+                        lr_policy=policy,
+                        gpu_count=gpu_count,
+                        selected_gpus=selected_gpus,
+                        batch_size=form.batch_size.data[0],
+                        batch_accumulation=form.batch_accumulation.data,
+                        val_interval=form.val_interval.data,
+                        traces_interval=form.traces_interval.data,
+                        pretrained_model=pretrained_model,
+                        crop_size=form.crop_size.data,
+                        use_mean=form.use_mean.data,
+                        network=network,
+                        random_seed=form.random_seed.data,
+                        solver_type=form.solver_type.data,
+                        rms_decay=form.rms_decay.data,
+                        shuffle=form.shuffle.data,
+                        data_aug=data_aug,
+                        ###############
+                        data_dir=datasetJob._dir,
+                        data_type=datasetJob.extension_id,
+                        test_batch_size=form.batch_size.data[0],
+                        network_text = form.custom_network.data,
+                        train_server_ip = form.train_server_ip.data,
+                        train_server_port = form.train_server_port.data,
+                        ###############
+                    ))
+                except:
+                    print 'extended job error'
+                    raise
 
-                    ###############
-                )
-                )
-            except:
-                job.tasks.append(fw.create_train_task(
-                    job=job,
-                    dataset=datasetJob,
-                    train_epochs=form.train_epochs.data,
-                    snapshot_interval=form.snapshot_interval.data,
-                    learning_rate=form.learning_rate.data[0],
-                    lr_policy=policy,
-                    gpu_count=gpu_count,
-                    selected_gpus=selected_gpus,
-                    batch_size=form.batch_size.data[0],
-                    batch_accumulation=form.batch_accumulation.data,
-                    val_interval=form.val_interval.data,
-                    traces_interval=form.traces_interval.data,
-                    pretrained_model=pretrained_model,
-                    crop_size=form.crop_size.data,
-                    use_mean=form.use_mean.data,
-                    network=network,
-                    random_seed=form.random_seed.data,
-                    solver_type=form.solver_type.data,
-                    rms_decay=form.rms_decay.data,
-                    shuffle=form.shuffle.data,
-                    data_aug=data_aug,
-                    ###############
-                    data_dir=None,
-                    data_type=None,
-                    test_batch_size=None,
-                    network_text = None,
-                    train_server_ip = None,
-                    train_server_port = None,
-
-                    ###############
-                )
-                )
+            else:
+                print '----------normal job', datasetJob.extension_id
+                try:
+                    job.tasks.append(fw.create_train_task(
+                        job=job,
+                        dataset=datasetJob,
+                        train_epochs=form.train_epochs.data,
+                        snapshot_interval=form.snapshot_interval.data,
+                        learning_rate=form.learning_rate.data[0],
+                        lr_policy=policy,
+                        gpu_count=gpu_count,
+                        selected_gpus=selected_gpus,
+                        batch_size=form.batch_size.data[0],
+                        batch_accumulation=form.batch_accumulation.data,
+                        val_interval=form.val_interval.data,
+                        traces_interval=form.traces_interval.data,
+                        pretrained_model=pretrained_model,
+                        crop_size=form.crop_size.data,
+                        use_mean=form.use_mean.data,
+                        network=network,
+                        random_seed=form.random_seed.data,
+                        solver_type=form.solver_type.data,
+                        rms_decay=form.rms_decay.data,
+                        shuffle=form.shuffle.data,
+                        data_aug=data_aug,
+                        # ###############
+                        # data_dir=None,
+                        # data_type=None,
+                        # test_batch_size=None,
+                        # network_text = None,
+                        # train_server_ip = None,
+                        # train_server_port = None,
+                        # ###############
+                    ))
+                except:
+                    print 'normal job error'
+                    raise
 
             # Save form data with the job so we can easily clone it later.
             save_form_to_job(job, form)

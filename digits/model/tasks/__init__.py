@@ -2,12 +2,16 @@
 from __future__ import absolute_import
 
 from .caffe_train import CaffeTrainTask
+##########################################
+from .caffe_train import DistributedTrainTask
+##########################################
 from .torch_train import TorchTrainTask
 from .train import TrainTask
 import ssd_pascal
 
 __all__ = [
     'CaffeTrainTask',
+    'DistributedTrainTask', ##########
     'TorchTrainTask',
     'TrainTask',
 ]

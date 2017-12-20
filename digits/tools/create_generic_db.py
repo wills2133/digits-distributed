@@ -87,7 +87,6 @@ class LmdbWriter(DbWriter):
         if not os.path.exists(db_dir):
             os.makedirs(db_dir)
         super(LmdbWriter, self).__init__(dataset_dir, **kwargs)
-        print 'mark1'
         # create LMDB for features
         self.feature_db = self.create_lmdb("features")
         # will create LMDB for labels later if necessary
@@ -452,7 +451,7 @@ def create_generic_db(jobs_dir, dataset_id, stage):
 
     force_same_shape = dataset.force_same_shape
 
-    if extension_id == 'ssd':
+    if extension_id == 'ssd_pascal':
         create_ssd_db(
             extension,
             stage, #test_db

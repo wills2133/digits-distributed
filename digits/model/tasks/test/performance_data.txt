@@ -1,0 +1,5 @@
+smallExcavator|precision_rate   0.912863070539|false_alarm_rate 0.0871369294606|reacall_rate     0.911479944675|miss_detect_rate 0.088520055325|
+concreteMixerTruck|precision_rate   0.972337482711|false_alarm_rate 0.0276625172891|reacall_rate     0.972337482711|miss_detect_rate 0.0276625172891|
+truck|precision_rate   0.995850622407|false_alarm_rate 0.00414937759336|reacall_rate     0.994467496542|miss_detect_rate 0.00553250345781|
+excavator|precision_rate   0.990318118949|false_alarm_rate 0.00968188105118|reacall_rate     0.988934993084|miss_detect_rate 0.0110650069156|
+people|precision_rate   0.866090364223|false_alarm_rate 0.133909635777|reacall_rate     0.867358229599|miss_detect_rate 0.132641770401|

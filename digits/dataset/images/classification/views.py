@@ -378,11 +378,22 @@ def explore():
     size = int(flask.request.args.get('size', 25))
     label = flask.request.args.get('label', None)
 
+
+
+
+
     if label is not None:
         try:
             label = int(label)
         except ValueError:
             label = None
+
+    # print '------------db', db
+    # print '------------page', page
+    # print '------------size', size
+    # print '------------label', label
+    # print '------------labels', labels.__class__
+    # print '------------db_path', db_path
 
     reader = DbReader(db_path)
     count = 0
@@ -393,6 +404,8 @@ def explore():
         total_entries = reader.total_entries
     else:
         total_entries = task.distribution[str(label)]
+
+
 
     max_page = min((total_entries - 1) / size, page + 5)
     pages = range(min_page, max_page + 1)
@@ -420,6 +433,8 @@ def explore():
                         arr = arr[:, :, [2, 1, 0]]
                     img = PIL.Image.fromarray(arr)
                 imgs.append({"label": labels[datum.label], "b64": utils.image.embed_image_html(img)})
+                # print labels[datum.label]
+                # print utils.image.embed_image_html(img)
         if label is None:
             count += 1
         else:
