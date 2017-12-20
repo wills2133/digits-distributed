@@ -65,14 +65,6 @@ class TrainTask(Task):
         self.network = kwargs.pop('network', None)
         self.framework_id = kwargs.pop('framework_id', None)
         self.data_aug = kwargs.pop('data_aug', None)
-        ###############
-        self.data_dir = kwargs.pop('data_dir', None)
-        self.data_type = kwargs.pop('data_type', None)
-        self.test_batch_size = kwargs.pop('test_batch_size', None)
-        self.network_text = kwargs.pop('network_text', None)
-        self.train_server_ip = kwargs.pop('train_server_ip', None)
-        self.train_server_port = kwargs.pop('train_server_port', None)
-        ###############
 
         super(TrainTask, self).__init__(job_dir=job.dir(), **kwargs)
         self.pickver_task_train = PICKLE_VERSION

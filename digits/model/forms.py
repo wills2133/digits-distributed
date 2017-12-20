@@ -161,8 +161,6 @@ class ModelForm(Form):
     train_server_ip = utils.forms.StringField(
         'Training server ip',
         validators=[
-            validate_file_exists,
-            validate_py_ext
         ],
         tooltip="Training server ip in format 'xxx.xxx.xxx.xxx'."
     )
@@ -170,8 +168,6 @@ class ModelForm(Form):
     train_server_port = utils.forms.StringField(
         'Training server port',
         validators=[
-            validate_file_exists,
-            validate_py_ext
         ],
         tooltip="Training server port in format 'xxxx'."
     )

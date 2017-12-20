@@ -123,6 +123,16 @@ class CaffeTrainTask(TrainTask):
         Arguments:
         network -- a caffe NetParameter defining the network
         """
+
+        ###############
+        self.data_dir = kwargs.pop('data_dir', None)
+        self.data_type = kwargs.pop('data_type', None)
+        self.test_batch_size = kwargs.pop('test_batch_size', None)
+        self.network_text = kwargs.pop('network_text', None)
+        self.train_server_ip = kwargs.pop('train_server_ip', None)
+        self.train_server_port = kwargs.pop('train_server_port', None)
+        ###############
+
         super(CaffeTrainTask, self).__init__(**kwargs)
         self.pickver_task_caffe_train = PICKLE_VERSION
 
@@ -143,6 +153,9 @@ class CaffeTrainTask(TrainTask):
         self.digits_version = digits.__version__
         self.caffe_version = config_value('caffe')['version']
         self.caffe_flavor = config_value('caffe')['flavor']
+
+
+
 
     def __getstate__(self):
         state = super(CaffeTrainTask, self).__getstate__()
@@ -618,7 +631,149 @@ class CaffeTrainTask(TrainTask):
 
         return True
 
+
+    def run(self, resources):
+        """
+        Execute the task
+
+        Arguments:
+        resources -- the resources assigned by the scheduler for this task
+        """
+        self.before_run()
+
+        env = os.environ.copy()
+        args = self.task_arguments(resources, env)
+        if not args:
+            self.logger.error('Could not create the arguments for Popen')
+            self.status = Status.ERROR
+            return False
+        # Convert them all to strings
+        args = [str(x) for x in args]
+
+        self.logger.info('%s task started.' % self.name())
+        self.status = Status.RUN
+        unrecognized_output = []
+
+        import sys
+        env['PYTHONPATH'] = os.pathsep.join(['.', self.job_dir, env.get('PYTHONPATH', '')] + sys.path)
+
+        # https://docs.python.org/2/library/subprocess.html#converting-argument-sequence
+        if platform.system() == 'Windows':
+            args = ' '.join(args)
+            self.logger.info('Task subprocess args: "{}"'.format(args))
+        else:
+            self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
+
+        # self.p = subprocess.Popen(args,
+        #                           stdout=subprocess.PIPE,
+        #                           stderr=subprocess.STDOUT,
+        #                           cwd=self.job_dir,
+        #                           close_fds=True,
+        #                           # env=env,
+        #                           )
+        
+        from . import client
+        job_server_ip = str(self.train_server_ip)
+        job_server_host = int(self.train_server_port)
+        job_server_addr = (job_server_ip, job_server_host)
+        
+        sigterm_time = None  # When was the SIGTERM signal sent
+        sigterm_timeout = 2  # When should the SIGKILL signal be sent
+        try:
+            # while self.p.poll() is None:
+                # a = utils.nonblocking_readlines(self.p.stdout)
+                # print 'a', a.__class__
+            # for line in self.p.stdout:
+            #     if self.aborted.is_set():
+            #         if sigterm_time is None:
+            #             # Attempt graceful shutdown
+            #             self.p.send_signal(signal.SIGTERM)
+            #             sigterm_time = time.time()
+            #             self.status = Status.ABORT
+            #         break
+            #     # print 'line', line.__class__
+            #     # if line is not None:
+            #         # Remove whitespace
+            #         # line = line.strip()
+            #     print line
+            #     if line:
+            #         if not self.process_output(line):
+            #             self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
+            #             unrecognized_output.append(line)
+            #     else:
+            #         time.sleep(0.05)
+            #     if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
+            #         self.p.send_signal(signal.SIGKILL)
+            #         self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
+            #         time.sleep(0.1)
+            #     time.sleep(0.01)
+
+            # raw_input('=========pause2=========')
+
+            thread_log = client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id)
+            n = 0
+            while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
+                while n < len( thread_log.log_list ):
+                    line = thread_log.log_list[n]
+                    if self.aborted.is_set():
+                        if sigterm_time is None:
+                            client.abort_request( job_server_addr, self.job_dir, self.job_id )
+                            thread_log.stop()
+                            # Attempt graceful shutdown
+                            # self.p.send_signal(signal.SIGTERM)
+                            sigterm_time = time.time()
+                            self.status = Status.ABORT
+                        break
+                    if line:
+                        # print line
+                        if not self.process_output(line):
+                            self.logger.warning('%s unrecognized output: %s' % (self.name(), line.strip()))
+                            unrecognized_output.append(line)
+                    else:
+                        time.sleep(0.05)
+                    n += 1
+                if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
+                    # self.p.send_signal(signal.SIGKILL)
+                    self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
+                    time.sleep(0.1)
+                    break
+                time.sleep(0.5)
+                raise
+            
+        except:
+            # self.p.terminate()
+            print 'interupt while training!'
+            client.abort_request( job_server_addr, self.job_dir, self.job_id)
+            thread_log.stop()
+            self.after_run()
+            raise
+        
+        self.after_run()
+
+        if self.status != Status.RUN:
+            return False
+        # elif self.p.returncode != 0:
+        #     self.logger.error('%s task failed with error code %d' % (self.name(), self.p.returncode))
+        #     if self.exception is None:
+        #         self.exception = 'error code %d' % self.p.returncode
+        #         if unrecognized_output:
+        #             if self.traceback is None:
+        #                 self.traceback = '\n'.join(unrecognized_output)
+        #             else:
+        #                 self.traceback = self.traceback + ('\n'.join(unrecognized_output))
+        #     self.after_runtime_error()
+        #     self.status = Status.ERROR
+        #     return False
+        else:
+            self.logger.info('%s task completed.' % self.name())
+            self.status = Status.DONE
+            return True
+
+
+
     def save_files_generic(self):
+
+        print 'self.data_type', self.data_type
 
         if self.data_type == 'ssd_pascal' or self.data_type == 'ssd' :
 
@@ -653,11 +808,12 @@ class CaffeTrainTask(TrainTask):
             ################ end ##################
 
             ############### test_net ############## 
-            ssd_pascal.CreateTestNet(test_net_path, test_data_path, self.test_batch_size, 
-                label_map_file, name_size_file, output_result_dir)
+            # print 'create test.prototxt'
+            # ssd_pascal.CreateTestNet(test_net_path, test_data_path, self.test_batch_size, 
+            #     label_map_file, name_size_file, output_result_dir)
             ################# end #################
 
-            ############s## ssd solver #############
+            ############## ssd solver #############
             solver = caffe_pb2.SolverParameter()
 
             solver.max_iter = 120000
@@ -1077,20 +1233,121 @@ class CaffeTrainTask(TrainTask):
         args = [sys.executable + ' -c ' + '\"' + command_script + '\"']
         return args
 
+    # @override
+    # def process_output_bkp(self, line):
+    #     print '-----line', line 
+    #     float_exp = '(-NaN|NaN|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
+
+    #     # print 'line : %s\n' % line
+
+    #     self.caffe_log.write('%s\n' % line)
+
+    #     self.caffe_log.flush()
+    #     # parse caffe output
+    #     # timestamp, level, message = self.preprocess_output_caffe(line)
+    #     # if not message:
+    #     #     return True
+
+    #     # iteration updates
+    #     match = re.match(r'Iteration (\d+)', message)
+    #     if match:
+    #         i = int(match.group(1))
+    #         self.new_iteration(i)
+
+    #     # net output
+    #     # match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
+    #     match = re.search( r'Iteration (\d+), (\S*) = %s' % float_exp, line, flags = re.IGNORECASE )
+
+    #     if match:
+            
+
+
+    #         phase = match.group(1)
+    #         # index = int(match.group(2))
+    #         name = match.group(3)
+    #         # name = 'loss'
+    #         value = match.group(4)
+    #         ########################
+    #         #-nan
+
+    #         print '-----message = ', message
+    #         print '-----phase = ', phase
+    #         print 'name = ', name
+    #         print '-----value = ', value
+    #         if value.lower() == 'nan':
+    #             value = 0
+    #         # assert value.lower() != 'nan', \
+    #         #     'Network outputted %s for "%s" (%s phase). Try decreasing your learning rate.' % (value, name, phase)
+    #         ########################
+    #         # assert value.lower() != 'nan', \
+    #         #     'Network outputted NaN for "%s" (%s phase). Try decreasing your learning rate.' % (name, phase)
+    #         value = float(value)
+
+    #         # Find the layer type
+    #         kind = '?'
+    #         for layer in self.network.layer:
+    #             if name in layer.top:
+    #                 kind = layer.type
+    #                 break
+
+    #         if phase.lower() == 'train':
+    #             self.save_train_output(name, kind, value)
+    #         elif phase.lower() == 'test':
+    #             self.save_val_output(name, kind, value)
+    #         return True
+
+    #     # learning rate updates
+    #     match = re.match(r'Iteration (\d+).*lr = %s' % float_exp, message, flags=re.IGNORECASE)
+    #     if match:
+    #         i = int(match.group(1))
+    #         lr = float(match.group(2))
+    #         self.save_train_output('learning_rate', 'LearningRate', lr)
+    #         return True
+
+    #     # snapshot saved
+    #     if self.saving_snapshot:
+    #         if not message.startswith('Snapshotting solver state'):
+    #             self.logger.warning(
+    #                 'caffe output format seems to have changed. '
+    #                 'Expected "Snapshotting solver state..." after "Snapshotting to..."')
+    #         else:
+    #             self.logger.debug('Snapshot saved.')
+    #         self.detect_snapshots()
+    #         self.send_snapshot_update()
+    #         self.saving_snapshot = False
+    #         return True
+
+    #     # snapshot starting
+    #     match = re.match(r'Snapshotting to (.*)\s*$', message)
+    #     if match:
+    #         self.saving_snapshot = True
+    #         return True
+
+    #     if level in ['error', 'critical']:
+    #         self.logger.error('%s: %s' % (self.name(), message))
+    #         self.exception = message
+    #         return True
+
+    #     return True
+
     @override
     def process_output(self, line):
+        
         float_exp = '(-NaN|NaN|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
-
-        # print 'line : %s\n' % line
 
         self.caffe_log.write('%s\n' % line)
 
         self.caffe_log.flush()
         # parse caffe output
-        timestamp, level, message = self.preprocess_output_caffe(line)
+        # timestamp, level, message = self.preprocess_output_caffe(line)
+        # if not message:
+        #     return True
+        m = re.search( r'Iteration (\d+), (\S*) = %s' % float_exp, line, flags = re.IGNORECASE )
+        message = m.group(0)
         if not message:
             return True
 
+        print '-----line', line 
         # iteration updates
         match = re.match(r'Iteration (\d+)', message)
         if match:
@@ -1098,29 +1355,26 @@ class CaffeTrainTask(TrainTask):
             self.new_iteration(i)
 
         # net output
-        match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
+        # match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
+        match = re.match( r'Iteration (\d+), (\S*) = %s' % float_exp, message, flags = re.IGNORECASE )
+
         if match:
-            phase = match.group(1)
-            # index = int(match.group(2))
-            name = match.group(3)
-            # name = 'accuracy'
-            value = match.group(4)
+
+            phase = int(match.group(1))
+            name = match.group(2)
+            value = match.group(3)
             ########################
             #-nan
-
-            print 'message = ', message
-            print 'phase = ', phase
-            print 'name = ', name
-            print 'value = ', value
+            print '-----message = ', message
+            print '-----phase = ', phase
+            print '-----name = ', name
+            print '-----value = ', value
             if value.lower() == 'nan':
                 value = 0
             # assert value.lower() != 'nan', \
             #     'Network outputted %s for "%s" (%s phase). Try decreasing your learning rate.' % (value, name, phase)
             ########################
-            # assert value.lower() != 'nan', \
-            #     'Network outputted NaN for "%s" (%s phase). Try decreasing your learning rate.' % (name, phase)
             value = float(value)
-
             # Find the layer type
             kind = '?'
             for layer in self.network.layer:
@@ -1128,43 +1382,44 @@ class CaffeTrainTask(TrainTask):
                     kind = layer.type
                     break
 
-            if phase.lower() == 'train':
-                self.save_train_output(name, kind, value)
-            elif phase.lower() == 'test':
-                self.save_val_output(name, kind, value)
-            return True
+            self.save_train_output(name, kind, value)
+            # if phase.lower() == 'train':
+            #     self.save_train_output(name, kind, value)
+            # elif phase.lower() == 'test':
+            #     self.save_val_output(name, kind, value)
+            # return True
 
-        # learning rate updates
-        match = re.match(r'Iteration (\d+).*lr = %s' % float_exp, message, flags=re.IGNORECASE)
-        if match:
-            i = int(match.group(1))
-            lr = float(match.group(2))
-            self.save_train_output('learning_rate', 'LearningRate', lr)
-            return True
+        # # learning rate updates
+        # match = re.match(r'Iteration (\d+).*lr = %s' % float_exp, message, flags=re.IGNORECASE)
+        # if match:
+        #     i = int(match.group(1))
+        #     lr = float(match.group(2))
+        #     self.save_train_output('learning_rate', 'LearningRate', lr)
+        #     return True
 
-        # snapshot saved
-        if self.saving_snapshot:
-            if not message.startswith('Snapshotting solver state'):
-                self.logger.warning(
-                    'caffe output format seems to have changed. '
-                    'Expected "Snapshotting solver state..." after "Snapshotting to..."')
-            else:
-                self.logger.debug('Snapshot saved.')
-            self.detect_snapshots()
-            self.send_snapshot_update()
-            self.saving_snapshot = False
-            return True
+        # # snapshot saved
+        # if self.saving_snapshot:
+        #     if not message.startswith('Snapshotting solver state'):
+        #         self.logger.warning(
+        #             'caffe output format seems to have changed. '
+        #             'Expected "Snapshotting solver state..." after "Snapshotting to..."')
+        #     else:
+        #         self.logger.debug('Snapshot saved.')
+        #     self.detect_snapshots()
+        #     self.send_snapshot_update()
+        #     self.saving_snapshot = False
+        #     return True
 
-        # snapshot starting
-        match = re.match(r'Snapshotting to (.*)\s*$', message)
-        if match:
-            self.saving_snapshot = True
-            return True
+        # # snapshot starting
+        # match = re.match(r'Snapshotting to (.*)\s*$', message)
+        # if match:
+        #     self.saving_snapshot = True
+        #     return True
 
-        if level in ['error', 'critical']:
-            self.logger.error('%s: %s' % (self.name(), message))
-            self.exception = message
-            return True
+        # if level in ['error', 'critical']:
+        #     self.logger.error('%s: %s' % (self.name(), message))
+        #     self.exception = message
+        #     return True
 
         return True
 

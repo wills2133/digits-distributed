@@ -8,6 +8,19 @@ import logging
 import os
 import time
 import threading
+
+loglevel = logging.DEBUG
+logging.basicConfig(level=loglevel, format='%(asctime)s %(levelname)s %(message)s', datefmt='%H:%M:%S %d/%m/%Y')
+server_log = logging.getLogger(__name__)
+
+# if False:
+#     ip = "localhost"
+#     port = 2133
+# else:
+#     # ip = "192.168.43.173"
+#     ip = "118.201.243.15"
+#     port = 955
+
 class ProtoTCP:
 
     def __init__(self, sock):
@@ -16,7 +29,7 @@ class ProtoTCP:
         loglevel = logging.DEBUG
         # loglevel = logging.INFO
 
-        logging.basicConfig(level=loglevel, format='%(asctime)s %(levelname)s %(message)s', datefmt='Socket: %H:%M:%S %d/%m/%Y')
+        logging.basicConfig(level=loglevel, format='%(asctime)s %(levelname)s %(message)s', datefmt='%H:%M:%S %d/%m/%Y')
         self.log = logging.getLogger(__name__)
 
         self.packformat = '>Q'
@@ -56,7 +69,7 @@ class ProtoTCP:
         buf = ''        
         while n > 0:
 
-            print 'listening...'
+            self.log.debug('listening...')
             data = self.sock.recv(n)
             if data == '':
                 raise RuntimeError('unexpected connection close')
@@ -70,7 +83,7 @@ class ProtoTCP:
         return buf
 
     def send_message(self, proto_rep):
-        print 'sending....'
+        # self.log.debug('sending....')
         """ Send a serialized message (protobuf Message interface)
             to a socket, prepended by its length packed in 4
             bytes (big endian).
@@ -114,7 +127,8 @@ class thread_read_log(threading.Thread):
         print 'stop thread_read_log'
         self.stopped = True
 
-def training_request(args, job_dir, job_id):
+def training_request(addr, args, job_dir, job_id):
+
     req = proto.Request()
     res = proto.Response()
 
@@ -135,14 +149,13 @@ def training_request(args, job_dir, job_id):
     req.solver = solver
     req.train_val_net = train_net
 
-    port = 2133
-    ip = "localhost"
-    # ip = "118.201.243.15"
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # sock.bind( (ip , 2134) )
-    sock.connect((ip , port))
-    sock.settimeout(50)
+    server_log.debug('socket connecting {}:{}'.format(addr[0], addr[1]))
+    sock.connect(addr)
+    sock.settimeout(300)
+    server_log.debug('socket conneced!')
 
     tcp = ProtoTCP(sock)
     tcp.send_message(req)
@@ -152,46 +165,36 @@ def training_request(args, job_dir, job_id):
     t_read_log.start()
     return t_read_log
 
-def abort_request(job_dir, job_id):
+def abort_request(addr, job_dir, job_id):
     req = proto.Request()
     req.job_id = job_id
     req.command = proto.Request.ABORT
-    port = 2133
-    ip = "localhost"
-    # ip = "118.201.243.15"
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # sock.bind( (ip , 2134) )
-    sock.connect((ip , port))
-    sock.settimeout(50)
+    sock.connect(addr)
+    sock.settimeout(300)
 
     tcp = ProtoTCP(sock)
     tcp.send_message(req)
 
 if __name__ == '__main__':
 
-    args = '/home/wills/Projects/caffe-ssd/build/tools/caffe train --solver=/home/wills/Projects/digits/digits/jobs/20171201-012550-f273/solver.prototxt'
-    job_dir = '/home/wills/Projects/digits/digits/jobs/20171201-012550-f273'
-    # job_dir = '.'
-    job_id = 'job1'
+    job_id = '20171201-012717-3d11'
+    args = '/home/wills/Projects/caffe-ssd/build/tools/caffe train --solver=/home/wills/Projects/digits/digits/jobs/{}/solver.prototxt'.format(job_id)
+    job_dir = '/home/wills/Projects/digits/digits/jobs/{}'.format(job_id)
 
-    thread_log = training_request(args, job_dir, job_id)
 
+    thread_log = training_request( (ip , port), args , job_dir, job_id)
     n = 0
-    m = 0
-
     while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
-        # print '------------len:', len( thread_log.log_list )
-        if n < len( thread_log.log_list ):
-            print thread_log.log_list[n]
-            n += 1
-        else:
-            time.sleep(1)
-            m+=1
-        if m == 15:
-            thread_log.stop()
-
-    print '-----------thread_log.stopped', thread_log.stopped
+        print 'n', n
+        print 'len', len( thread_log.log_list )
+        while n < len( thread_log.log_list ):
+            line = thread_log.log_list[n]
+            print line
+            n+=1
+        time.sleep(1)
 
 
 
