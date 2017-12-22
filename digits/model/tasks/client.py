@@ -116,15 +116,14 @@ class thread_read_log(threading.Thread):
                     # write in the file
                 if response.log_end:
                     self.stopped = True
-                    
 
             except socket.error as err:
                 print err
 
-        print 'thread_read_log ends'
+        server_log.debug('Thread_read_log ends')
 
     def stop(self):
-        print 'stop thread_read_log'
+        server_log.debug('Stop thread_read_log')
         self.stopped = True
 
 def training_request(addr, args, job_dir, job_id):
@@ -177,7 +176,7 @@ def abort_request(addr, job_dir, job_id):
 
     tcp = ProtoTCP(sock)
     tcp.send_message(req)
-
+    print '-------stop3'
 if __name__ == '__main__':
 
     job_id = '20171201-012717-3d11'

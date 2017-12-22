@@ -1204,21 +1204,43 @@ def get_label():
         img_names = os.listdir(sp_pic_dir)
     else:
         raise werkzeug.exceptions.BadRequest('plese specify a valild pictues dir')
+
     ###get img width and height
+
+    ###get address of server runs model 
+    if 'test_server_ip' in flask.request.form:
+        test_server_ip = flask.request.form['test_server_ip']
+    else:
+         raise werkzeug.exceptions.BadRequest('test server ip is a required field')
+    if 'test_server_port' in flask.request.form:
+        test_server_port = flask.request.form['test_server_port']
+    else:
+         raise werkzeug.exceptions.BadRequest('test server port is a required field')
+
+    test_server_ip = str(test_server_ip)
+    test_server_port = int(test_server_port)
+    test_server_addr = (test_server_ip, test_server_port)
+
+    print 'test_server_addr connecting {}:{}'.format(test_server_addr[0], test_server_addr[1])
+
     img_path_0 = os.path.join( sp_pic_dir, img_names[0] )
     img = Image.open(img_path_0)
     img_w = img.size[0]
     img_h = img.size[1]
     # print img_w, img_h
     # ip = "localhost"
-    ip = "118.201.243.15"
-    port = 2133
+    # ip = "118.201.243.15"
+    # port = 2133
+    
+    try:
+        for img_name in img_names:
+            img_path = os.path.join( sp_pic_dir, img_name )
+            save_labels.get_response_label(img_path, img_w, img_h, test_server_ip, test_server_port)
+    except Exception as e:
+        return 'Error occurs while requesting testing server.<br>error: {}'.format(e)
 
-    for img_name in img_names:
-        img_path = os.path.join( sp_pic_dir, img_name )
-        save_labels.get_response_label(img_path, img_w, img_h, ip, port)
 
-    return 'finish detection'
+    return 'Finish Detection'
     # data_extensions = get_data_extensions()
     # view_extensions = get_view_extensions()
     # return flask.render_template(
@@ -1281,14 +1303,12 @@ def show_sample():
     md_label_dir = os.path.join( sp_pic_dir, '..', 'labels_miss_detect')
     label_file_dir = os.path.join( sp_pic_dir, '..', 'labels_prediction')
 
-    print 'mark1'
     if label != None:     
         print 'label', label
         if labels != []:
             label_file_dir = os.path.join( sp_pic_dir, '..', ('labels_' + labels[label]) )
 
 
-    print 'mark2'
     ###get labls name list
     if os.path.exists(label_file_dir):
         filename_sets = os.listdir(label_file_dir)
@@ -1311,7 +1331,7 @@ def show_sample():
     ###drawing parameters
     font_size = 30
     rect_thick = 15 
-    font = ImageFont.truetype('ubuntu_font_family/Ubuntu-B.ttf', font_size)
+    font = ImageFont.truetype('ubuntu_font_family/Ubuntu-B.ttf', font_size) ###systim font is /usr/share/font/truthtype/ubuntu_font_family/Ubuntu-B.ttf
     count = count_begin
     while count < count_end and count < total_entries:
 

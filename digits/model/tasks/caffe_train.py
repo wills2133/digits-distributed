@@ -1123,11 +1123,7 @@ class CaffeTrainTask(TrainTask):
 
         self.caffe_log.flush()
         # parse caffe output
-        # timestamp, level, message = self.preprocess_output_caffe(line)
-        # if not message:
-        #     return True
-        m = re.search( r'Iteration (\d+), (\S*) = %s' % float_exp, line, flags = re.IGNORECASE )
-        message = m.group(0)
+        timestamp, level, message = self.preprocess_output_caffe(line)
         if not message:
             return True
 
@@ -1135,6 +1131,7 @@ class CaffeTrainTask(TrainTask):
         # iteration updates
         match = re.match(r'Iteration (\d+)', message)
         if match:
+            print '-----Iteration = ', phase
             i = int(match.group(1))
             self.new_iteration(i)
 
@@ -1200,10 +1197,10 @@ class CaffeTrainTask(TrainTask):
         #     self.saving_snapshot = True
         #     return True
 
-        # if level in ['error', 'critical']:
-        #     self.logger.error('%s: %s' % (self.name(), message))
-        #     self.exception = message
-        #     return True
+        if level in ['error', 'critical']:
+            self.logger.error('%s: %s' % (self.name(), message))
+            self.exception = message
+            return True
 
         return True
 
@@ -1214,11 +1211,13 @@ class CaffeTrainTask(TrainTask):
         """
         # NOTE: This must change when the logging format changes
         # LMMDD HH:MM:SS.MICROS pid file:lineno] message
-        match = re.match(r'(\w)(\d{4} \S{8}).*]\s+(\S.*)$', line)
+        # match = re.match(r'(\w)(\d{4} \S{8}).*]\s+(\S.*)$', line)
+        match = re.search(r'(\w)(\d{4} \S*)](.*)$', line)
         if match:
+            print '-----match = ', match.group(0)
             level = match.group(1)
             # add the year because caffe omits it
-            timestr = '%s%s' % (time.strftime('%Y'), match.group(2))
+            # timestr = '%s%s' % (time.strftime('%Y'), match.group(2))
             message = match.group(3)
             if level == 'I':
                 level = 'info'
@@ -1228,7 +1227,8 @@ class CaffeTrainTask(TrainTask):
                 level = 'error'
             elif level == 'F':  # FAIL
                 level = 'critical'
-            timestamp = time.mktime(time.strptime(timestr, '%Y%m%d %H:%M:%S'))
+            # timestamp = time.mktime(time.strptime(timestr, '%Y%m%d %H:%M:%S'))
+            timestamp = time.mktime(time.strptime(time.strftime('%Y%m%d %H:%M:%S'), '%Y%m%d %H:%M:%S'))
             return (timestamp, level, message)
         else:
             return (None, None, None)
@@ -2165,20 +2165,24 @@ class DistributedTrainTask(CaffeTrainTask):
 
         sigterm_time = None  # When was the SIGTERM signal sent
         sigterm_timeout = 2  # When should the SIGKILL signal be sent
+        
+        thread_log = client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id)
         try:
-            thread_log = client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id)
             n = 0
             while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
+                print '-------------------------------------'
+                print '--------------------------------------------------------------------------'
+
+                if self.aborted.is_set():
+                    if sigterm_time is None:
+                        # Attempt graceful shutdown
+                        client.abort_request( job_server_addr, self.job_dir, self.job_id )
+                        thread_log.stop()
+                        sigterm_time = time.time()
+                        self.status = Status.ABORT
+
                 while n < len( thread_log.log_list ):
                     line = thread_log.log_list[n]
-                    if self.aborted.is_set():
-                        if sigterm_time is None:
-                            # Attempt graceful shutdown
-                            client.abort_request( job_server_addr, self.job_dir, self.job_id )
-                            thread_log.stop()
-                            sigterm_time = time.time()
-                            self.status = Status.ABORT
-                        break
                     if line:
                         # print line
                         if not self.process_output(line):
@@ -2187,12 +2191,15 @@ class DistributedTrainTask(CaffeTrainTask):
                     else:
                         time.sleep(0.05)
                     n += 1
+
                 if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
+                    self.logger.warning('Fail to abort normally, Sent SIGKILL to task "%s"' % self.name())
                     client.abort_request( job_server_addr, self.job_dir, self.job_id)
                     thread_log.stop()
-                    self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
+                    # self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
                     time.sleep(0.1)
                     break
+
                 time.sleep(0.5)
             
         except:
