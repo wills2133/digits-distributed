@@ -123,6 +123,16 @@ $("#dataset").change();
                     {{form.train_epochs.tooltip}}
                     {{form.train_epochs(class='form-control')}}
                 </div>
+                <!--/////////////////////////////////////////////////////////-->
+                <div class="form-group{{mark_errors([form.test_batch_size])}}">
+                    {{form.max_iter_num.label}}
+                    {{form.max_iter_num.tooltip}}
+                    <small class="pull-right">
+                        {{form.max_iter_num.small_text}}
+                    </small>
+                    {{form.max_iter_num(class='form-control', placeholder='minimum 1')}}
+                </div>
+                <!--//////////////////////////////////////////////////////////-->
                 <div class="form-group{{mark_errors([form.snapshot_interval])}}">
                     {{form.snapshot_interval.label}}
                     {{form.snapshot_interval.tooltip}}
@@ -152,7 +162,7 @@ $("#dataset").change();
                     </small>
                     {{form.batch_size(class='form-control', placeholder='[network defaults]')}}
                 </div>
-                <!--  -->
+                <!--/////////////////////////////////////////////////////////-->
                 <div class="form-group{{mark_errors([form.test_batch_size])}}">
                     {{form.test_batch_size.label}}
                     {{form.test_batch_size.tooltip}}
@@ -161,7 +171,7 @@ $("#dataset").change();
                     </small>
                     {{form.test_batch_size(class='form-control', placeholder='[network defaults]')}}
                 </div>
-                <!--  -->
+                <!--//////////////////////////////////////////////////////////-->
                 <div class="form-group{{mark_errors([form.batch_accumulation])}}"
                     id="batch-accumulation-option" style="display:none;">
                     {{form.batch_accumulation.label}}

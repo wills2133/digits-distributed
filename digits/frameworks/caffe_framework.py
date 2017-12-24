@@ -13,7 +13,6 @@ from .framework import Framework
 import digits
 from digits.config import config_value
 from digits.model.tasks import CaffeTrainTask
-from digits.model.tasks import DistributedTrainTask
 from digits.utils import subclass, override, parse_version
 
 

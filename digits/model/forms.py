@@ -94,6 +94,8 @@ class ModelForm(Form):
         tooltip="Choose a Python file on the server containing layer definitions."
     )
 
+
+
     train_epochs = utils.forms.IntegerField(
         'Training epochs',
         validators=[
@@ -102,7 +104,30 @@ class ModelForm(Form):
         default=30,
         tooltip="How many passes through the training data?"
     )
+    ###################################################
+    max_iter_num = utils.forms.IntegerField(
+        'Max Iteration Number',
+        validators=[
+            validators.NumberRange(min=1),
+        ],
+        tooltip=("Stop training job after max ieration Number")
+    )
 
+    train_server_ip = utils.forms.StringField(
+        'Training server ip',
+        validators=[
+        ],
+        tooltip="Training server ip in format 'xxx.xxx.xxx.xxx'."
+    )
+
+    train_server_port = utils.forms.StringField(
+        'Training server port',
+        validators=[
+        ],
+        tooltip="Training server port in format 'xxxx'."
+    )
+
+    ###################################################
     snapshot_interval = utils.forms.FloatField(
         'Snapshot interval (in epochs)',
         default=1,
@@ -139,53 +164,37 @@ class ModelForm(Form):
         tooltip=('If you provide a random seed, then back-to-back runs with '
                  'the same model and dataset should give identical results.')
     )
-
+    ###################################################
     batch_size = utils.forms.MultiIntegerField(
         'Train batch size',##########
         validators=[
             utils.forms.MultiNumberRange(min=1),
-            utils.forms.MultiOptional(),
+            # utils.forms.MultiOptional(),
         ],
         tooltip="How many images to process at once. If blank, values are used from the network definition."
     )
-    ##########
+
     test_batch_size = utils.forms.MultiIntegerField(
         'Test batch size',
         validators=[
             utils.forms.MultiNumberRange(min=1),
-            utils.forms.MultiOptional(),
+            # utils.forms.MultiOptional(),
         ],
         tooltip="How many images to process at once. If blank, values are used from the network definition."
     )
-
-    train_server_ip = utils.forms.StringField(
-        'Training server ip',
-        validators=[
-        ],
-        tooltip="Training server ip in format 'xxx.xxx.xxx.xxx'."
-    )
-
-    train_server_port = utils.forms.StringField(
-        'Training server port',
-        validators=[
-        ],
-        tooltip="Training server port in format 'xxxx'."
-    )
-
-    ##########
 
     batch_accumulation = utils.forms.IntegerField(
         'Batch Accumulation',
         validators=[
             validators.NumberRange(min=1),
-            validators.Optional(),
+            # validators.Optional(),
         ],
         tooltip=("Accumulate gradients over multiple batches (useful when you "
                  "need a bigger batch size for training but it doesn't fit in memory).")
     )
+    ###################################################
 
     # Solver types
-
     solver_type = utils.forms.SelectField(
         'Solver type',
         choices=[

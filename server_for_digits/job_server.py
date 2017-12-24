@@ -165,11 +165,13 @@ class thread_train_job(threading.Thread):
         f.close()
         server_log.debug( 'job argument: {}'.format(self.proto_req.arguments) )
         args = self.proto_req.arguments.split()
-
+        args[2] = '--solver=./solver.prototxt'
+        print args
         # execute train job in sub process 
         self.sub_p = subprocess.Popen( args,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
             cwd=job_dir, close_fds=True, )
-        # get log_file
+
+
         return self.sub_p.stdout
 
     def sent_log(self, lines, is_end):
@@ -190,11 +192,13 @@ class thread_train_job(threading.Thread):
 
         # interval = interval * 1000
         last_line_num = 0
+        # sigterm_time = None
         then = time.time()
         lines = []
 
         try:
             #send log line produce in each interval
+            # while self.p.poll() is None:
             for line in nonblocking_readlines(log_file):
                 if self.stopped:
                     break
@@ -203,6 +207,7 @@ class thread_train_job(threading.Thread):
                     line = line.strip()
                 if line:
                     lines.append(line)
+                    sigterm_time = time.time()
                     # print 'line-----', line
                 else:
                     time.sleep(0.05)
@@ -211,10 +216,27 @@ class thread_train_job(threading.Thread):
                     then = now
                     self.sent_log(lines, False)
                     lines = []
-
+                # if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
+                #     self.p.send_signal(signal.SIGKILL)
+                #     self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
+                #     time.sleep(0.1)
             if not self.stopped:
                 self.sent_log(lines, True)
         except Exception as thread_err:
+
+            # if self.p.returncode != 0:
+            #     self.logger.error('%s task failed with error code %d' % (self.name(), self.p.returncode))
+            #     if self.exception is None:
+            #         self.exception = 'error code %d' % self.p.returncode
+            #         if unrecognized_output:
+            #             if self.traceback is None:
+            #                 self.traceback = '\n'.join(unrecognized_output)
+            #             else:
+            #                 self.traceback = self.traceback + ('\n'.join(unrecognized_output))
+            #     self.after_runtime_error()
+            #     self.status = Status.ERROR
+            #     return False
+
             server_log.debug('Thread Error: {}'.format(thread_err) )
             server_log.debug('Thread was interupted')
             self.stop()
@@ -239,12 +261,13 @@ def run_training_server():
 
     port = 2133
     ip = "localhost"
+
     # ip = "118.201.243.15"
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind( (ip , port) )
-    sock.settimeout(50)
+    sock.settimeout(300)
     sock.listen( 5 )
     
     job_list = {}
@@ -262,7 +285,7 @@ def run_training_server():
                     del job_list[key]
 
             sock_client, sock_client_address = sock.accept()
-            server_log.debug( 'sock_client_address: {}'.sock_client_address )
+            server_log.debug( 'sock_client_address: {}'.format(sock_client_address) )
             tcp_req = ProtoTCP(sock_client)
             request = tcp_req.get_proto_message(req)
 

@@ -171,7 +171,6 @@ class framenet(Framework):
 
 ############################################
 
-
 @blueprint.route('/new', methods=['GET'])
 @blueprint.route('/new/<extension_id>', methods=['GET'])
 @utils.auth.requires_login
@@ -221,7 +220,6 @@ def create(extension_id=None):
     form.standard_networks.choices = []
     form.previous_networks.choices = get_previous_networks()
     form.pretrained_networks.choices = get_pretrained_networks()
-
     prev_network_snapshots = get_previous_network_snapshots()
 
     # Is there a request to clone a job with ?clone=<job_id>
@@ -245,7 +243,6 @@ def create(extension_id=None):
 
     datasetJob = scheduler.get_job(form.dataset.data)
 
-    # print '---------------datasetJob.__dict__', datasetJob.__dict__
     if not datasetJob:
         raise werkzeug.exceptions.BadRequest(
             'Unknown dataset job_id "%s"' % form.dataset.data)
@@ -282,7 +279,17 @@ def create(extension_id=None):
                 dataset_id=datasetJob.id(),
             )
             # get framework (hard-coded to caffe for now)
-            fw = frameworks.get_framework_by_id(form.framework.data)
+
+            ######################################################
+            # if hasattr(datasetJob, 'extension_id'):
+            # if datasetJob.extension_id == 'ssd_pascal':
+            if form.train_server_ip.data and form.train_server_port.data:
+                ### framework to execute task in other servers
+                fw = frameworks.get_framework_by_id('distrib_caffe')
+            else:
+                ### framework to execute local task
+                fw = frameworks.get_framework_by_id(form.framework.data)
+            ######################################################
 
             pretrained_model = None
             # if form.method.data == 'standard':
@@ -397,8 +404,7 @@ def create(extension_id=None):
                 (flask.request.files[form.python_layer_client_file.name]
                  if form.python_layer_client_file.name in flask.request.files
                  else ''), form.python_layer_server_file.data)
-
-            if datasetJob.extension_id != None:
+            if form.train_server_ip.data and form.train_server_port.data:
                 try:
                     job.tasks.append(fw.create_train_task(
                         job=job,
@@ -423,8 +429,8 @@ def create(extension_id=None):
                         shuffle=form.shuffle.data,
                         data_aug=data_aug,
                         ###############
+                        max_iter_num = form.max_iter_num.data,
                         data_dir=datasetJob._dir,
-                        data_type=datasetJob.extension_id,
                         test_batch_size=form.batch_size.data[0],
                         network_text = form.custom_network.data,
                         train_server_ip = form.train_server_ip.data,
@@ -432,11 +438,10 @@ def create(extension_id=None):
                         ###############
                     ))
                 except:
-                    print 'extended job error'
+                    print 'server job error'
                     raise
 
             else:
-                print '----------normal job', datasetJob.extension_id
                 try:
                     job.tasks.append(fw.create_train_task(
                         job=job,
@@ -460,17 +465,9 @@ def create(extension_id=None):
                         rms_decay=form.rms_decay.data,
                         shuffle=form.shuffle.data,
                         data_aug=data_aug,
-                        # ###############
-                        # data_dir=None,
-                        # data_type=None,
-                        # test_batch_size=None,
-                        # network_text = None,
-                        # train_server_ip = None,
-                        # train_server_port = None,
-                        # ###############
                     ))
                 except:
-                    print 'normal job error'
+                    print 'local job error'
                     raise
 
             # Save form data with the job so we can easily clone it later.
@@ -1221,7 +1218,7 @@ def get_label():
     test_server_port = int(test_server_port)
     test_server_addr = (test_server_ip, test_server_port)
 
-    print 'test_server_addr connecting {}:{}'.format(test_server_addr[0], test_server_addr[1])
+    
 
     img_path_0 = os.path.join( sp_pic_dir, img_names[0] )
     img = Image.open(img_path_0)
@@ -1235,7 +1232,7 @@ def get_label():
     try:
         for img_name in img_names:
             img_path = os.path.join( sp_pic_dir, img_name )
-            save_labels.get_response_label(img_path, img_w, img_h, test_server_ip, test_server_port)
+            save_labels.get_response_label(img_path, img_w, img_h, test_server_addr)
     except Exception as e:
         return 'Error occurs while requesting testing server.<br>error: {}'.format(e)
 
@@ -1307,7 +1304,6 @@ def show_sample():
         print 'label', label
         if labels != []:
             label_file_dir = os.path.join( sp_pic_dir, '..', ('labels_' + labels[label]) )
-
 
     ###get labls name list
     if os.path.exists(label_file_dir):

@@ -6,6 +6,12 @@ import StringIO
 # import cv2
 import logging
 import os
+
+loglevel = logging.DEBUG
+logging.basicConfig(level=loglevel, format='%(asctime)s %(levelname)s %(message)s', datefmt='%H:%M:%S %d/%m/%Y')
+server_log = logging.getLogger(__name__)
+
+
 class ProtoTCP:
 
     def __init__(self):
@@ -101,7 +107,7 @@ def label_response(response, label_path, w, h):
     f.close()
 
 
-def get_response_label(img_path, w, h, ip, port):
+def get_response_label(img_path, w, h, addr):
     req = proto.Request()
     res = proto.Response()
 
@@ -138,7 +144,8 @@ def get_response_label(img_path, w, h, ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(50)
 
-    sock.connect((ip , port))
+    sock.connect(addr)
+    server_log.debug('Connecting test server {}:{}'.format(addr[0], addr[1]))
 
     tcp = ProtoTCP()
     tcp.send_message(sock, msg)
@@ -176,7 +183,7 @@ if __name__ == '__main__':
     img_w = img.size[0]
     img_h = img.size[1]
 
-    get_response_label(img_path, img_w, img_h)
+    get_response_label( (ip, port) )
 
     labels = os.listdir('./labels_prediction')
 
