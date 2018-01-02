@@ -55,6 +55,7 @@ class DistributedTrainTask(CaffeTrainTask):
         self.max_iter_num = kwargs.pop('max_iter_num', None)
         self.data_dir = kwargs.pop('data_dir', None)
         self.test_batch_size = kwargs.pop('test_batch_size', None)
+        self.network_type=kwargs.pop('network_type', None)
         self.network_text = kwargs.pop('network_text', None)
         self.train_server_ip = kwargs.pop('train_server_ip', None)
         self.train_server_port = kwargs.pop('train_server_port', None)
@@ -82,7 +83,6 @@ class DistributedTrainTask(CaffeTrainTask):
         print '----------------------------------------------'
         ############## train_net ##############
         # ssd_pascal.CreateTrainNet(train_net_path, train_data_path, self.batch_size) 
-
         ###directly edit on custom network text form page
         network_test, n = re.subn('(?<=source:)(.+)?(?=\n)', '"'+train_data_path+'"', self.network_text)
         # print (network_test)
@@ -177,13 +177,16 @@ class DistributedTrainTask(CaffeTrainTask):
         sigterm_time = None  # When was the SIGTERM signal sent
         sigterm_timeout = 2  # When should the SIGKILL signal be sent
 
-        thread_log = job_client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id)
+        thread_log = job_client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id, self.data_dir, self.network_type)
         try:
             n = 0
             while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
-                print '**************************************************'
-                print '--------------------------------------------------'
-
+                # print '**************************************************'
+                # print '--------------------------------------------------'
+                print 'digits is waiting for response...'
+                # print 'n', n
+                # print 'len( thread_log.log_list', len( thread_log.log_list )
+                # print 'line', line
                 if self.aborted.is_set():
                     if sigterm_time is None:
                         # Attempt graceful shutdown
@@ -242,13 +245,13 @@ class DistributedTrainTask(CaffeTrainTask):
         if not message:
             return True
 
-        print '-----line', line 
+        print '-----line', line
         # iteration updates
         match = re.match(r'Iteration (\d+)', message)
         if match:
             
             i = int(match.group(1))
-            print '-----Iteration = ', i
+            # print '-----Iteration = ', i
             self.new_iteration(i)
 
         # net output
@@ -262,10 +265,10 @@ class DistributedTrainTask(CaffeTrainTask):
             value = match.group(3)
             ########################
             #-nan
-            print '-----message = ', message
-            print '-----phase = ', phase
-            print '-----name = ', name
-            print '-----value = ', value
+            # print '-----message = ', message
+            # print '-----phase = ', phase
+            # print '-----name = ', name
+            # print '-----value = ', value
             if value.lower() == 'nan':
                 value = 0
             # assert value.lower() != 'nan', \
@@ -330,7 +333,7 @@ class DistributedTrainTask(CaffeTrainTask):
         # match = re.match(r'(\w)(\d{4} \S{8}).*]\s+(\S.*)$', line)
         match = re.search(r'(\w)(\d{4} \S*)](.*)$', line)
         if match:
-            print '-----match = ', match.group(0)
+            # print '-----match = ', match.group(0)
             level = match.group(1)
             # add the year because caffe omits it
             # timestr = '%s%s' % (time.strftime('%Y'), match.group(2))

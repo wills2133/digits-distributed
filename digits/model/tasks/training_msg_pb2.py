@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='training_msg.proto',
   package='TrainingMsg',
   syntax='proto2',
-  serialized_pb=_b('\n\x12training_msg.proto\x12\x0bTrainingMsg\"\xc1\x01\n\x07Request\x12\x0e\n\x06job_id\x18\x01 \x02(\t\x12-\n\x07\x63ommand\x18\x02 \x02(\x0e\x32\x1c.TrainingMsg.Request.Command\x12\x11\n\targuments\x18\x03 \x01(\t\x12\x0e\n\x06solver\x18\x04 \x01(\t\x12\x15\n\rtrain_val_net\x18\x05 \x01(\t\x12\x10\n\x08test_net\x18\x06 \x01(\t\"+\n\x07\x43ommand\x12\t\n\x05TRAIN\x10\x00\x12\t\n\x05\x41\x42ORT\x10\x01\x12\n\n\x06\x44\x45LETE\x10\x02\"?\n\x08Response\x12\x10\n\x08line_num\x18\x01 \x02(\t\x12\x10\n\x08log_line\x18\x02 \x03(\t\x12\x0f\n\x07log_end\x18\x03 \x02(\x08')
+  serialized_pb=_b('\n\x12training_msg.proto\x12\x0bTrainingMsg\"\xc5\x02\n\x07Request\x12\x0e\n\x06job_id\x18\x01 \x02(\t\x12-\n\x07\x63ommand\x18\x02 \x02(\x0e\x32\x1c.TrainingMsg.Request.Command\x12\x11\n\targuments\x18\x03 \x01(\t\x12\x0e\n\x06solver\x18\x04 \x01(\t\x12\x15\n\rtrain_val_net\x18\x05 \x01(\t\x12\x10\n\x08test_net\x18\x06 \x01(\t\x12\x14\n\x0cimage_folder\x18\x07 \x01(\t\x12/\n\x0cnetwork_type\x18\x08 \x01(\x0e\x32\x19.TrainingMsg.Request.Type\"+\n\x07\x43ommand\x12\t\n\x05TRAIN\x10\x00\x12\t\n\x05\x41\x42ORT\x10\x01\x12\n\n\x06\x44\x45LETE\x10\x02\";\n\x04Type\x12\r\n\tDETECTION\x10\x00\x12\x0e\n\nATTRIBUTES\x10\x01\x12\x08\n\x04\x46\x41\x43\x45\x10\x02\x12\n\n\x06\x43USTOM\x10\x03\"N\n\x08Response\x12\x10\n\x08line_num\x18\x01 \x01(\t\x12\x10\n\x08log_line\x18\x02 \x03(\t\x12\x0f\n\x07log_end\x18\x03 \x01(\x08\x12\r\n\x05\x65rror\x18\x04 \x01(\t')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -46,10 +46,40 @@ _REQUEST_COMMAND = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=186,
-  serialized_end=229,
+  serialized_start=257,
+  serialized_end=300,
 )
 _sym_db.RegisterEnumDescriptor(_REQUEST_COMMAND)
+
+_REQUEST_TYPE = _descriptor.EnumDescriptor(
+  name='Type',
+  full_name='TrainingMsg.Request.Type',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='DETECTION', index=0, number=0,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='ATTRIBUTES', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='FACE', index=2, number=2,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='CUSTOM', index=3, number=3,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=302,
+  serialized_end=361,
+)
+_sym_db.RegisterEnumDescriptor(_REQUEST_TYPE)
 
 
 _REQUEST = _descriptor.Descriptor(
@@ -101,12 +131,27 @@ _REQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='image_folder', full_name='TrainingMsg.Request.image_folder', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='network_type', full_name='TrainingMsg.Request.network_type', index=7,
+      number=8, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
     _REQUEST_COMMAND,
+    _REQUEST_TYPE,
   ],
   options=None,
   is_extendable=False,
@@ -115,7 +160,7 @@ _REQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=36,
-  serialized_end=229,
+  serialized_end=361,
 )
 
 
@@ -128,7 +173,7 @@ _RESPONSE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='line_num', full_name='TrainingMsg.Response.line_num', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -142,8 +187,15 @@ _RESPONSE = _descriptor.Descriptor(
       options=None),
     _descriptor.FieldDescriptor(
       name='log_end', full_name='TrainingMsg.Response.log_end', index=2,
-      number=3, type=8, cpp_type=7, label=2,
+      number=3, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='error', full_name='TrainingMsg.Response.error', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -159,12 +211,14 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=231,
-  serialized_end=294,
+  serialized_start=363,
+  serialized_end=441,
 )
 
 _REQUEST.fields_by_name['command'].enum_type = _REQUEST_COMMAND
+_REQUEST.fields_by_name['network_type'].enum_type = _REQUEST_TYPE
 _REQUEST_COMMAND.containing_type = _REQUEST
+_REQUEST_TYPE.containing_type = _REQUEST
 DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 

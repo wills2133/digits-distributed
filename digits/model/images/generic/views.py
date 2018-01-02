@@ -180,7 +180,11 @@ def new(extension_id=None):
     """
     form = GenericImageModelForm()
     form.dataset.choices = get_datasets(extension_id)
-    form.standard_networks.choices = []
+    # form.standard_networks.choices = []
+    #####################################
+    form.standard_networks.choices = get_standard_networks()
+    form.standard_networks.default = get_default_standard_network()
+    #####################################
     form.previous_networks.choices = get_previous_networks()
     form.pretrained_networks.choices = get_pretrained_networks()
     prev_network_snapshots = get_previous_network_snapshots()
@@ -217,7 +221,11 @@ def create(extension_id=None):
     """
     form = GenericImageModelForm()
     form.dataset.choices = get_datasets(extension_id)
-    form.standard_networks.choices = []
+    # form.standard_networks.choices = []
+    #####################################
+    form.standard_networks.choices = get_standard_networks()
+    form.standard_networks.default = get_default_standard_network()
+    #####################################
     form.previous_networks.choices = get_previous_networks()
     form.pretrained_networks.choices = get_pretrained_networks()
     prev_network_snapshots = get_previous_network_snapshots()
@@ -279,7 +287,6 @@ def create(extension_id=None):
                 dataset_id=datasetJob.id(),
             )
             # get framework (hard-coded to caffe for now)
-
             ######################################################
             # if hasattr(datasetJob, 'extension_id'):
             # if datasetJob.extension_id == 'ssd_pascal':
@@ -292,15 +299,43 @@ def create(extension_id=None):
             ######################################################
 
             pretrained_model = None
-            # if form.method.data == 'standard':
-            if form.method.data == 'previous':
+            network_type = 'default'
+            network_text = 'empty network'
+            ######################################################
+            if form.method.data == 'standard':
+                found = False
+
+                # can we find it in standard networks?
+                network_desc = fw.get_standard_network_desc(form.standard_networks.data)
+
+                # print 'network_desc', network_desc.__dict__
+                if network_desc:
+                    found = True
+                    network = fw.get_network_from_desc(network_desc)
+                ######################################################
+                    network_type = form.standard_networks.data
+                    network_text = network_desc
+                ######################################################
+
+                if not found:
+                    raise werkzeug.exceptions.BadRequest(
+                        'Unknown standard model "%s"' % form.standard_networks.data)
+            elif form.method.data == 'previous':
                 old_job = scheduler.get_job(form.previous_networks.data)
+
                 if not old_job:
                     raise werkzeug.exceptions.BadRequest(
                         'Job not found: %s' % form.previous_networks.data)
+            ######################################################
+            # if form.method.data == 'previous':
+            #     old_job = scheduler.get_job(form.previous_networks.data)
+            #     if not old_job:
+            #         raise werkzeug.exceptions.BadRequest(
+            #             'Job not found: %s' % form.previous_networks.data)
 
                 use_same_dataset = (old_job.dataset_id == job.dataset_id)
                 network = fw.get_network_from_previous(old_job.train_task().network, use_same_dataset)
+
 
                 for choice in form.previous_networks.choices:
                     if choice[0] == form.previous_networks.data:
@@ -339,8 +374,12 @@ def create(extension_id=None):
 
             elif form.method.data == 'custom':
                 network = fw.get_network_from_desc(form.custom_network.data)
-
                 pretrained_model = form.custom_network_snapshot.data.strip()
+            ######################################################
+                network_type = 'custom'
+                network_text = form.custom_network.data
+            ######################################################
+
             else:
                 raise werkzeug.exceptions.BadRequest(
                     'Unrecognized method: "%s"' % form.method.data)
@@ -432,7 +471,8 @@ def create(extension_id=None):
                         max_iter_num = form.max_iter_num.data,
                         data_dir=datasetJob._dir,
                         test_batch_size=form.batch_size.data[0],
-                        network_text = form.custom_network.data,
+                        network_type=network_type,
+                        network_text = network_text,
                         train_server_ip = form.train_server_ip.data,
                         train_server_port = form.train_server_port.data,
                         ###############
@@ -1460,3 +1500,21 @@ def http_server():
     from flask import redirect
     return redirect('http://localhost:1022/')
 #################
+
+#################
+
+def get_standard_networks():
+    return [
+        # ('lenet', 'LeNet'),
+        # ('alexnet', 'AlexNet'),
+        # ('googlenet', 'GoogLeNet'),
+        ('detection', 'Detection'),
+        ('attributes', 'Attributes'),
+        ('face', 'Face'),
+    ]
+
+
+def get_default_standard_network():
+    return 'detection'
+
+################

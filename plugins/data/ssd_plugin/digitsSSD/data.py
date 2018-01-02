@@ -166,16 +166,25 @@ class DataIngestion(DataIngestionInterface):
         #     feature[2] = img
         feature = []
         label = []
-        print 'dataset_dir', entry
+        dataset_dir = self.userdata['voc_folder']
+        job_dir = entry
+        dataset_dir_file = job_dir + '/dataset_dir.txt'
+        # print 'dataset_dir', entry
         find_path = False 
         for p in sys.path:
             plug_in_path = p + '/digitsSSD/scripts'
             if os.path.exists(plug_in_path):
-                # print ( 'bash ' + plug_in_path + '/create_list.sh ' + self.userdata['voc_folder'] + ' ' +  entry) )
-                os.system( 'bash ' + plug_in_path + '/create_list.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
-                # print ( 'bash ' + plug_in_path + '/create_data.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
-                os.system( 'bash ' + plug_in_path + '/create_data.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
-                shutil.copy( (plug_in_path + '/labelmap_voc.prototxt'), entry)
+
+                f = open(dataset_dir_file, 'w')
+                f.write(dataset_dir)
+                f.close()
+
+                # # print ( 'bash ' + plug_in_path + '/create_list.sh ' + self.userdata['voc_folder'] + ' ' +  entry) )
+                # os.system( 'bash ' + plug_in_path + '/create_list.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
+                # # print ( 'bash ' + plug_in_path + '/create_data.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
+
+                # os.system( 'bash ' + plug_in_path + '/create_data.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
+                # shutil.copy( (plug_in_path + '/labelmap_voc.prototxt'), entry)
                 find_path = True
                 break;
          

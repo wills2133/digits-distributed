@@ -412,7 +412,7 @@ def create_ssd_db(
             label_encoding,
             force_same_shape):
 
-    print '---------------------now create ssd lmdb'
+    print 'now create ssd lmdb'
     voc_path = extension.itemize_entries(stage) #sample names
     _feature, _label = extension.encode_entry(dataset_dir)
     # voc_path='$HOME/data/VOCdevkit/' dataset_dir='.'

@@ -112,34 +112,50 @@ class thread_read_log(threading.Thread):
                 
                 for line in response.log_line:
                     self.log_list.append( line )
-                    # print line
                     # write in the file
                 if response.log_end:
                     self.stopped = True
+                    
 
             except socket.error as err:
                 print err
 
-        server_log.debug('Thread_read_log ends')
+        print 'thread_read_log ends'
 
     def stop(self):
-        server_log.debug('Stop thread_read_log')
+        print 'stop thread_read_log'
         self.stopped = True
 
-def training_request(addr, args, job_dir, job_id):
+def training_request(addr, args, job_dir, job_id, data_dir, network_type):
 
     req = proto.Request()
     res = proto.Response()
 
-    f = open ( job_dir + '/solver.prototxt' )
-    solver_lines = f.readlines()
-    solver = ('').join( solver_lines )
-    f.close()
+    try:
+        f = open ( job_dir + '/solver.prototxt' )
+        solver_lines = f.readlines()
+        solver = ('').join( solver_lines )
+        f.close()
+    except:
+        print 'cannot find solver.txt'
+        raise
 
-    f = open ( job_dir + '/train_val.prototxt' )
-    train_net_lines = f.readlines()
-    train_net = ('').join( train_net_lines )
-    f.close()
+    try:
+        f = open ( job_dir + '/train_val.prototxt' )
+        train_net_lines = f.readlines()
+        train_net = ('').join( train_net_lines )
+        f.close()
+    except:
+        print 'cannot find train_val.txt'
+        raise
+
+    try:
+        f = open(data_dir + '/dataset_dir.txt')
+        dataset_dir = f.readlines()[0]
+        f.close()
+    except:
+        print 'cannot find dataset_dir_file.txt'
+        raise
 
     req.job_id = job_id
     # req.command = proto.Request.ABORT
@@ -147,6 +163,18 @@ def training_request(addr, args, job_dir, job_id):
     req.arguments = args
     req.solver = solver
     req.train_val_net = train_net
+    req.image_folder = dataset_dir
+    print 'network_type', network_type
+    print 'network_type', network_type.__class__
+    if network_type == 'detection':
+        req.network_type = proto.Request.DETECTION
+    elif network_type == 'attributes':
+        req.network_type = proto.Request.ATTRIBUTES
+    elif network_type == 'face':
+        req.network_type = proto.Request.FACE
+    else:
+        req.network_type = proto.Request.CUSTOM
+
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -176,15 +204,16 @@ def abort_request(addr, job_dir, job_id):
 
     tcp = ProtoTCP(sock)
     tcp.send_message(req)
-    print '-------stop3'
+
 if __name__ == '__main__':
 
     job_id = '20171201-012717-3d11'
     args = '/home/wills/Projects/caffe-ssd/build/tools/caffe train --solver=/home/wills/Projects/digits/digits/jobs/{}/solver.prototxt'.format(job_id)
     job_dir = '/home/wills/Projects/digits/digits/jobs/{}'.format(job_id)
+    data_dir = 'data_dir'
 
 
-    thread_log = training_request( (ip , port), args , job_dir, job_id)
+    thread_log = training_request( (ip , port), args , job_dir, job_id, data_dir)
     n = 0
     while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
         print 'n', n

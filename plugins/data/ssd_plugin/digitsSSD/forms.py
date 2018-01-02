@@ -31,7 +31,7 @@ class DatasetForm(Form):
         u'VOC folder',
         validators=[
             validators.DataRequired(),
-            validate_folder_path,
+            # validate_folder_path,
         ],
         tooltip="Specify the path to the voc folder"
     )

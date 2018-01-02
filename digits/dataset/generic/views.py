@@ -125,10 +125,8 @@ def create(extension_id):
         scheduler.add_job(job)
 
         if request_wants_json():
-            print  '---------------------request_wants_json'
             return flask.jsonify(job.json_dict())
         else:# render template
-            print '----------------------not request_wants_json'
             return flask.redirect(flask.url_for(
                 'digits.dataset.views.show',
                 job_id=job.id()))
