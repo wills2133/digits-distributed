@@ -5,11 +5,18 @@
     <!-- For Internet Explorer -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
+    <!-- ############################################### -->
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
     <link rel="icon" href="{{url_for('static', filename='images/nvidia.ico')}}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css', ver=dir_hash) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-theme.min.css', ver=dir_hash) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', ver=dir_hash) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/c3.min.css', ver=dir_hash) }}">
+
+    <!-- <link rel="stylesheet" type="text/css" href="./static/webuploader/webuploader.css"> -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='webuploader/webuploader.css', ver=dir_hash) }}">
+
     <title>{% block title %}DIGITS{% endblock %}</title>
 
     <script src="{{ url_for('static', filename='js/3rdparty/jquery-1.11.1.min.js') }}"></script>
@@ -22,11 +29,19 @@
     <script src="{{ url_for('static', filename='js/file_field.js') }}"></script>
     <script src="{{ url_for('static', filename='js/3rdparty/underscore-1.8.3.min.js') }}"></script>
 
+
+    <!-- <script src="./static/webuploader/webuploader.min.js"></script> -->
+    <script src="{{ url_for('static', filename='webuploader/webuploader.min.js') }}"></script>
+
+
     <script src="{{ url_for('static', filename='js/3rdparty/ace-1.2.3.min.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
     <script src="{{ url_for('static', filename='js/3rdparty/ace.mode-python-1.2.3.min.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
     <script src="{{ url_for('static', filename='js/3rdparty/ace.mode-lua-1.2.3.min.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
     <script src="{{ url_for('static', filename='js/3rdparty/ace.theme-chrome-1.2.3.min.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
     <script src="{{ url_for('static', filename='js/3rdparty/ace.ext-searchbox-1.2.3.min.js', ver=dir_hash) }}" type="text/javascript" charset="utf-8"></script>
+
+
+
     {% block head %}
     {% endblock %}
 </head>

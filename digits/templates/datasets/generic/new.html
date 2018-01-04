@@ -10,6 +10,8 @@
 New {{ extension_title }} Dataset
 {% endblock %}
 
+
+
 {% block nav %}
 <li class="active"><a href="{{url_for('digits.dataset.generic.views.new', extension_id=extension_id)}}">New Dataset</a></li>
 {% endblock %}
@@ -33,7 +35,75 @@ New {{ extension_title }} Dataset
 
 
     <div class="row">
+
+
+
         <div class="col-sm-6 col-sm-offset-3 well">
+
+
+<div style="margin:0px 0 0 0px;">
+    <div id="picker" style="float:left;">choose dataset</div>
+    <div id="progress" class="progress" style="width:500px;float:left;margin:10px 0 0 0px;">
+        <div class="progress-bar progress-bar-striped active" role="progressbar" style="width:0%;"></div>
+    </div>
+    <div style="clear:both;"></div>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+    var task_id = WebUploader.Base.guid();
+    var uploader = WebUploader.create({
+        swf: "{{ url_for('static', filename='webuploader/Uploader.swf') }}",
+        server: '{{ url_for("digits.dataset.generic.views.upload", extension_id=extension_id) }}',
+        pick: '#picker',
+        auto: true,
+        chunked: true,
+        chunkSize: 20 * 1024 * 1024,
+        chunkRetry: 3,
+        threads: 1,
+        duplicate: true,
+        formData: {
+            task_id: task_id,
+        },
+    });
+
+    uploader.on('startUpload', function() {
+        $('#progress').show();
+        $('.progress-bar').css('width', '0%');
+        $('.progress-bar').text('0%');
+        $('.progress-bar').removeClass('progress-bar-danger progress-bar-success');
+        $('.progress-bar').addClass('active progress-bar-striped');
+    });
+
+    uploader.on('uploadProgress', function(file, percentage) {
+        $('.progress-bar').css('width', percentage * 100 - 1 + '%');
+        $('.progress-bar').text(Math.floor(percentage * 100 - 1) + '%');
+    });
+
+    uploader.on('uploadSuccess', function(file) {
+        var data = {'task_id': task_id, 'ext': file.source['ext'], 'type': file.source['type']};
+        $.get('{{ url_for("digits.dataset.generic.views.upload_success", extension_id=extension_id) }}', data);
+        $('.progress-bar').css('width', '100%');
+        $('.progress-bar').text('100%');
+        $('.progress-bar').addClass('progress-bar-success');
+        $('.progress-bar').text('successed');
+    });
+
+    uploader.on('uploadError', function(file) {
+        $('.progress-bar').css('width', '100%');
+        $('.progress-bar').text('100%');
+        $('.progress-bar').addClass('progress-bar-danger');
+        $('.progress-bar').text('failed');
+    });
+
+    uploader.on('uploadComplete', function(file) {
+        $('.progress-bar').removeClass('active progress-bar-striped');
+    });
+
+    $('#progress').hide();
+});
+</script>
+
+
             <div class="form-group{{mark_errors([form.dsopts_feature_encoding])}}">
                 {{form.dsopts_feature_encoding.label}}
                 {{form.dsopts_feature_encoding.tooltip}}

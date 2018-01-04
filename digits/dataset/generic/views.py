@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+
 # Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
 from __future__ import absolute_import
 
@@ -214,10 +218,50 @@ def summary(job):
     """
     return flask.render_template('datasets/generic/summary.html', dataset=job)
 
+################################################
 @blueprint.route('/http_server.json', methods=['POST'])
 @blueprint.route('/http_server', methods=['POST', 'GET'])
 def http_server():
     from flask import redirect
     return redirect('http://localhost:1022/')
 
+################################################
+# @blueprint.route('/upload./<extension_id>.json', methods=['POST'])
+@blueprint.route('/upload/<extension_id>', methods=['GET', 'POST'])
+def upload(extension_id):  # 一个分片上传后被调用
 
+    if flask.request.method == 'POST':
+        upload_file = flask.request.files['file']
+        task = flask.request.form.get('task_id')  # 获取文件唯一标识符
+        chunk = flask.request.form.get('chunk', 0)  # 获取该分片在所有分片中的序号
+        filename = '%s%s' % (task, chunk)  # 构成该分片唯一标识符
+
+    upload_file.save('/home/wills/Projects/digits/digits/static/upload_file/%s' % filename)  # 保存分片到本地
+    
+    print '/home/wills/Projects/digits/digits/static/upload_file/%s' % filename
+    return new(extension_id)
+
+# @blueprint.route('/upload_success/<extension_id>.json', methods=['POST'])
+@blueprint.route('/upload_success/<extension_id>', methods=['GET', 'POST'])
+def upload_success(extension_id):  # 所有分片均上传完后被调用
+
+    task = flask.request.args.get('task_id')
+    ext = flask.request.args.get('ext', '')
+    upload_type = flask.request.args.get('type')
+    if len(ext) == 0 and upload_type:
+        ext = upload_type.split('/')[1]
+    ext = '' if len(ext) == 0 else '.%s' % ext  # 构建文件后缀名
+    chunk = 0
+    with open('/home/wills/Projects/digits/digits/static/upload_file/%s%s' % (task, ext), 'w') as target_file:  # 创建新文件
+        while True:
+            try:
+                filename = '/home/wills/Projects/digits/digits/static/upload_file/%s%d' % (task, chunk)
+                source_file = open(filename, 'r')  # 按序打开每个分片
+                target_file.write(source_file.read())  # 读取分片内容写入新文件
+                source_file.close()
+            except IOError:
+                break
+            chunk += 1
+            os.remove(filename)  # 删除该分片，节约空间
+    print '/home/wills/Projects/digits/digits/static/upload_file/%s%s' % (task, ext)
+    return new(extension_id)
