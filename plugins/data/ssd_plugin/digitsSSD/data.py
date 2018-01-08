@@ -138,7 +138,8 @@ class DataIngestion(DataIngestionInterface):
         # self.userdata[COLOR_PALETTE_ATTRIBUTE] = palette
 
 
-
+    def get_dataset_addr(self, entry):
+        return self.userdata['dataset_server_ip'], self.userdata['dataset_server_port']
     """
     this instance method is the core of the data plug-in: 
     it reads data associated with one of the identifiers returned in itemize_entries 
@@ -170,26 +171,27 @@ class DataIngestion(DataIngestionInterface):
         job_dir = entry
         dataset_dir_file = job_dir + '/dataset_dir.txt'
         # print 'dataset_dir', entry
-        find_path = False 
-        for p in sys.path:
-            plug_in_path = p + '/digitsSSD/scripts'
-            if os.path.exists(plug_in_path):
-
-                f = open(dataset_dir_file, 'w')
-                f.write(dataset_dir)
-                f.close()
-
+        
+        if os.path.exists(dataset_dir):
+            f = open(dataset_dir_file, 'w')
+            f.write(dataset_dir)
+            f.close()
+        # find_path = False 
+        # for p in sys.path:
+            
+            # plug_in_path = p + '/digitsSSD/scripts'
+            # if os.path.exists(plug_in_path):
                 # # print ( 'bash ' + plug_in_path + '/create_list.sh ' + self.userdata['voc_folder'] + ' ' +  entry) )
                 # os.system( 'bash ' + plug_in_path + '/create_list.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
                 # # print ( 'bash ' + plug_in_path + '/create_data.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
 
                 # os.system( 'bash ' + plug_in_path + '/create_data.sh ' + self.userdata['voc_folder'] + ' ' +  entry )
                 # shutil.copy( (plug_in_path + '/labelmap_voc.prototxt'), entry)
-                find_path = True
-                break;
+        #         find_path = True
+        #         break;
          
-        if not find_path:
-            print 'no match plugin path found'
+        # if not find_path:
+        #     print 'no match plugin path found'
             
         return feature, label
 

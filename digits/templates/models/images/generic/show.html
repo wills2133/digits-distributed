@@ -382,20 +382,88 @@
                 style="display:none;"
                 {% endif %}#}
                 >
-                <!-- ////////////////////////////////////////////////////////////// -->
+                <!-- ################################################################ -->
+                <!-- ################################################################ -->
+                <!-- ################################################################ -->
                 <h2>Test Models</h2>
                 <div class="row">
                     <div class="form-group">
                         <div class="col-sm-6">
                             <h3>Test Images</h3>
                             <div>
+                                <head>
+                                    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+                                    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='webuploader/webuploader.css', ver=dir_hash) }}">
+                                    <script src="{{ url_for('static', filename='webuploader/webuploader.min.js') }}"></script>
+                                </head>
                                 <div class="form-group">
-                                    <button name="upload-db-btn"
-                                        formaction="{{url_for('digits.model.images.generic.views.http_server')}}"
-                                        formtarget="_blank"
-                                        class="btn btn-info btn-file">
-                                        Upload Sample Set
-                                    </button>
+                                    <label for="upload_dataset" class="control-label">Upload Dataset</label>
+                                    <span class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                        title="upload dataset to training server."
+                                    ></span>
+
+                                    <div style="margin:0px 0px 0px 0px;">
+                                        <div id="picker" style="float:left;">choose dataset</div>
+                                        <div style="clear:both;"></div>
+                                    </div>
+                                    <!-- <small>Package before upload</small> -->
+                                    <div id="progress" class="progress" style="width:340px; float:left; margin:0px 0px 10px 0px;">
+                                        <div class="progress-bar progress-bar-striped active" role="progressbar" style="width:0%;"></div>
+                                    </div>
+                                    <script type="text/javascript">
+                                        $(document).ready(function() {
+                                            var task_id = WebUploader.Base.guid();
+                                            var uploader = WebUploader.create({
+                                                swf: "{{ url_for('static', filename='webuploader/Uploader.swf') }}",
+                                                server: '{{ url_for("digits.model.images.generic.views.upload") }}',
+                                                pick: '#picker',
+                                                auto: true,
+                                                chunked: true,
+                                                chunkSize: 20 * 1024 * 1024,
+                                                chunkRetry: 3,
+                                                threads: 1,
+                                                duplicate: true,
+                                                formData: {
+                                                    task_id: task_id,
+                                                },
+                                            });
+
+                                            uploader.on('startUpload', function() {
+                                                $('#progress').show();
+                                                $('.progress-bar').css('width', '0%');
+                                                $('.progress-bar').text('0%');
+                                                $('.progress-bar').removeClass('progress-bar-danger progress-bar-success');
+                                                $('.progress-bar').addClass('active progress-bar-striped');
+                                            });
+
+                                            uploader.on('uploadProgress', function(file, percentage) {
+                                                $('.progress-bar').css('width', percentage * 100 - 1 + '%');
+                                                $('.progress-bar').text(Math.floor(percentage * 100 - 1) + '%');
+                                            });
+
+                                            uploader.on('uploadSuccess', function(file) {
+                                                var data = {'task_id': task_id, 'ext': file.source['ext'], 'type': file.source['type']};
+                                                $.get('{{ url_for("digits.model.images.generic.views.upload_success") }}', data);
+                                                $('.progress-bar').css('width', '100%');
+                                                $('.progress-bar').text('100%');
+                                                $('.progress-bar').addClass('progress-bar-success');
+                                                $('.progress-bar').text('successed');
+                                            });
+
+                                            uploader.on('uploadError', function(file) {
+                                                $('.progress-bar').css('width', '100%');
+                                                $('.progress-bar').text('100%');
+                                                $('.progress-bar').addClass('progress-bar-danger');
+                                                $('.progress-bar').text('failed');
+                                            });
+
+                                            uploader.on('uploadComplete', function(file) {
+                                                $('.progress-bar').removeClass('active progress-bar-striped');
+                                            });
+
+                                            $('#progress').hide();
+                                        });
+                                    </script>
                                 </div>
                             </div>
 
@@ -455,14 +523,15 @@
                                 </button>
                                 
                             </div>
-
-
-
                         </div>
 
                         <div class="col-sm-6">
                             <h3>Performance</h3>
                             <div class="form-group">
+                                <label for="cal_performance" class="control-label">Calculate Performance</label>
+                                <span class="explanation-tooltip glyphicon glyphicon-question-sign"
+                                    title="calculate model performance data."></span>
+                                <br>
                                 <button name="infer-db-btn"
                                     formaction="{{url_for('digits.model.images.generic.views.cal_performance_data', job_id=job.id())}}"
                                     formmethod="post"
