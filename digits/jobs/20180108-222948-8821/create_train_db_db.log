@@ -1,0 +1,16 @@
+Tensorflow support disabled.
+now create ssd lmdb
+dataset_dir /home/wills/Projects/digits/digits/jobs/20180108-222948-8821/dataset_dir.txt
+dataset_dir /home/wills/data/VOCdevkit
+job_dir not found!
+2018-01-08 22:29:51 [ERROR] OSError:
+Traceback (most recent call last):
+File "/home/wills/Projects/digits/digits/tools/create_generic_db.py", line 510, in <module>
+args['stage']
+File "/home/wills/Projects/digits/digits/tools/create_generic_db.py", line 463, in create_generic_db
+force_same_shape)
+File "/home/wills/Projects/digits/digits/tools/create_generic_db.py", line 417, in create_ssd_db
+_feature, _label = extension.encode_entry(dataset_dir)
+File "/home/wills/.local/lib/python2.7/site-packages/digitsSSD/data.py", line 178, in encode_entry
+os.mkdir(dataset_dir)
+OSError: [Errno 2] No such file or directory: '/home/wills/data/VOCdevkit'

@@ -6,43 +6,48 @@
 
 
 
-<!-- <iframe src="http://localhost:2134/" width="100%" height="20%"></iframe> -->
+
+<!-- <iframe src={{url}} width="100%" height=80px></iframe> -->
 
 
 <!-- ################################################################################ -->
-                    <h4>Dataset Server Address</h4>
-                    <div class="form-group{{mark_errors([form.dataset_server_ip])}}">
-                        {{form.dataset_server_ip.label}}
-                        {{form.dataset_server_ip.tooltip}}
-                        <small class="pull-right">
-                            {{form.dataset_server_ip.small_text}}
-                        </small>
-                        {{form.dataset_server_ip(class='form-control', placeholder='xxx.xxx.xxx.xxx')}}
-                    </div>
-                    <div class="form-group{{mark_errors([form.dataset_server_port])}}">
-                        {{form.dataset_server_port.label}}
-                        {{form.dataset_server_port.tooltip}}
-                        <small class="pull-right">
-                            {{form.dataset_server_port.small_text}}
-                        </small>
-                        {{form.dataset_server_port(class='form-control', placeholder='xxxx')}}
-                    </div>
+<h4>Dataset Server Address</h4>
+<div class="form-group{{mark_errors([form.dataset_server_ip])}}">
+    {{form.dataset_server_ip.label}}
+    {{form.dataset_server_ip.tooltip}}
+    <small class="pull-right">
+        {{form.dataset_server_ip.small_text}}
+    </small>
+    {{form.dataset_server_ip(class='form-control', placeholder='xxx.xxx.xxx.xxx')}}
+</div>
+<div class="form-group{{mark_errors([form.dataset_server_port])}}">
+    {{form.dataset_server_port.label}}
+    {{form.dataset_server_port.tooltip}}
+    <small class="pull-right">
+        {{form.dataset_server_port.small_text}}
+    </small>
+    {{form.dataset_server_port(class='form-control', placeholder='xxxx')}}
+</div>
 
-    <button name="infer-db-btn"
-        formaction="{{url_for('digits.dataset.generic.views.dataset_server', extension_id = 'ssd_pascal')}}"
-        formmethod="post"
-        formenctype="multipart/form-data"
-        formtarget="_blank"
-        class="btn btn-primary">
-        Upload Dataset
-    </button>
-    
-<!-- ################################################################################ -->
 
 <h4>Dataset Server Folder</h4>
 <div class="form-group{{mark_errors([form.voc_folder])}}">
     {{ form.voc_folder.label }}
     {{ form.voc_folder.tooltip }}
     {{ form.voc_folder(class='form-control autocomplete_path', placeholder='folder') }}
+    <small>Create a folder in dataset server to sasve dataset</small>
 </div>
-<small>Specify the upload folder in dataset server</small>
+
+<div>
+<button name="infer-db-btn"
+    formaction="{{url_for('digits.dataset.generic.views.dataset_server', extension_id = 'ssd_pascal')}}"
+    formmethod="post"
+    formenctype="multipart/form-data"
+    formtarget="_blank"
+    class="btn btn-primary">
+    Upload Dataset
+</button>
+</div>
+<!-- ################################################################################ -->
+
+

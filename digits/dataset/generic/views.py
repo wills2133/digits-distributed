@@ -32,7 +32,6 @@ def new(extension_id):
     """
     Returns a form for a new GenericDatasetJob
     """
-
     form = GenericDatasetForm()
 
     # Is there a request to clone a job with ?clone=<job_id>
@@ -226,7 +225,37 @@ def dataset_server(extension_id):
     extension_form = extension.get_dataset_form()
     dataset_server_ip = extension_form.dataset_server_ip.data
     dataset_server_port = extension_form.dataset_server_port.data
-    print 'extension_form', extension_form.dataset_server_ip.data
-    print 'extension_form', extension_form.dataset_server_port.data
-    return redirect( 'http://{}:{}/.'.format(dataset_server_ip, dataset_server_port) )
+    dataset_folder = extension_form.voc_folder.data
+    # print 'dataset_server_ip', extension_form.dataset_server_ip.data
+    # print 'dataset_server_port', extension_form.dataset_server_port.data
+    # print 'voc_folder', extension_form.voc_folder.data
+    return redirect( 'http://{}:{}/?dataset_folder={}'.format(dataset_server_ip, dataset_server_port, dataset_folder) )
 
+    # """
+    # Returns a form for a new GenericDatasetJob
+    # """
+    # form = GenericDatasetForm()
+
+    # # Is there a request to clone a job with ?clone=<job_id>
+    # utils.forms.fill_form_if_cloned(form)
+
+    # extension = extensions.data.get_extension(extension_id)
+    # if extension is None:
+    #     raise ValueError("Unknown extension '%s'" % extension_id)
+    # extension_form = extension.get_dataset_form()
+
+    # # Is there a request to clone a job with ?clone=<job_id>
+    # utils.forms.fill_form_if_cloned(extension_form)
+
+    # template, context = extension.get_dataset_template(extension_form)
+    # rendered_extension = flask.render_template_string(template, **context)
+    # url='http://{}:{}/?dataset_folder={}'.format(dataset_server_ip, dataset_server_port, dataset_folder)
+    # print url
+    # return flask.render_template(
+    #     'datasets/generic/new.html',
+    #     extension_title=extension.get_title(),
+    #     extension_id=extension_id,
+    #     extension_html=rendered_extension,
+    #     form=form,
+    #     url=url
+    # )

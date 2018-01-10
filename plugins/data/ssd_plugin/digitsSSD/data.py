@@ -170,12 +170,16 @@ class DataIngestion(DataIngestionInterface):
         dataset_dir = self.userdata['voc_folder']
         job_dir = entry
         dataset_dir_file = job_dir + '/dataset_dir.txt'
-        # print 'dataset_dir', entry
+
+        if not os.path.exists(job_dir):
+            print 'job_dir not found!'
+            print 'create job_dir!'
+            os.mkdir(job_dir)
+        f = open(dataset_dir_file, 'w')
+        f.write(dataset_dir)
+        f.close()
         
-        if os.path.exists(dataset_dir):
-            f = open(dataset_dir_file, 'w')
-            f.write(dataset_dir)
-            f.close()
+            
         # find_path = False 
         # for p in sys.path:
             

@@ -183,6 +183,10 @@ class DistributedTrainTask(CaffeTrainTask):
         thread_log = job_client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id, self.data_dir, self.network_type)
         try:
             n = 0
+            if not os.path.exists(self.job_dir):
+                os.mkdir(self.job_dir)
+            f = open(self.job_dir, 'w')
+
             while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
                 # print '**************************************************'
                 # print '--------------------------------------------------'
@@ -201,6 +205,7 @@ class DistributedTrainTask(CaffeTrainTask):
                 while n < len( thread_log.log_list ):
                     line = thread_log.log_list[n]
                     if line:
+                        f.write(line)
                         socket_time = time.time()
                         # print line
                         if not self.process_output(line):
@@ -230,7 +235,7 @@ class DistributedTrainTask(CaffeTrainTask):
                     break
                     
                 time.sleep(0.5)
-            
+            f.close()
         except:
             print 'interupt while training!'
             job_client.abort_request( job_server_addr, self.job_dir, self.job_id)

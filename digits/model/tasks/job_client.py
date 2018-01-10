@@ -106,8 +106,6 @@ class thread_read_log(threading.Thread):
 
     def run(self):
         while not self.stopped:
-            print '--------try get response'
-
             try:
                 response = self.tcp.get_proto_message(self.res)
                 
