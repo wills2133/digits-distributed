@@ -96,7 +96,7 @@
             {% set task = job.train_task() %}
             <hr>
 
-            <form id="test-model-form"
+<!--        <form id="test-model-form"
                 enctype="multipart/form-data"
                 method="post"
                 onkeypress="return event.keyCode != 13;" {# Disable enter to submit #}
@@ -107,37 +107,37 @@
                 <h2>Trained Models</h2>
                 <div class="row">
                     <div class="col-sm-12">
-                        <label for="snapshot_epoch">Select Model</label>
+                        <label for="snapshot_epoch_replaced">Select Model</label>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-sm-8">
                         <div class="form-group">
-                            <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
+                            <select id="snapshot_epoch_replaced" name="snapshot_epoch_replaced" class="form-control">
                             </select>
                             <script>
                                 function updateSnapshotList(data) {
                                     var selected = null;
                                     var latest_selected = true;
-                                    if ($("#snapshot_epoch").find('option').length) {
-                                        latest_selected = ($("#snapshot_epoch").find('option').first().val() == $("#snapshot_epoch").val());
-                                        selected = $("#snapshot_epoch").val();
+                                    if ($("#snapshot_epoch_replaced").find('option').length) {
+                                        latest_selected = ($("#snapshot_epoch_replaced").find('option').first().val() == $("#snapshot_epoch_replaced").val());
+                                        selected = $("#snapshot_epoch_replaced").val();
                                     }
                                     // remove old options
-                                    $("#snapshot_epoch").find("option").remove();
+                                    $("#snapshot_epoch_replaced").find("option").remove();
                                     if (data.length)
                                         $("#test-model-form").show();
                                     for (var i=0; i<data.length; i++) {
                                         option = data[i];
-                                        $("#snapshot_epoch").append('<option value="'+option[0]+'">'+option[1]+'</option>');
+                                        $("#snapshot_epoch_replaced").append('<option value="'+option[0]+'">'+option[1]+'</option>');
                                     }
                                     if (data.length) {
                                         var value = selected;
                                         if (!value || latest_selected)
                                             value = data[0][0];
                                         if (value)
-                                            $("#snapshot_epoch").val(value);
+                                            $("#snapshot_epoch_replaced").val(value);
                                     }
                                 }
                                 updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescape %});
@@ -373,7 +373,8 @@
                     </div>
 
                 </div>
-            </form>
+            </form> 
+-->
             <form id="test-model-form"
                 enctype="multipart/form-data"
                 method="post"
@@ -385,6 +386,57 @@
                 <!-- ################################################################ -->
                 <!-- ################################################################ -->
                 <!-- ################################################################ -->
+                <h2>Trained Models</h2>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label for="snapshot_epoch">Select Model</label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-8">
+                        <div class="form-group">
+                            <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
+                            </select>
+                            <script>
+                                function updateSnapshotList(data) {
+                                    var selected = null;
+                                    var latest_selected = true;
+                                    if ($("#snapshot_epoch").find('option').length) {
+                                        latest_selected = ($("#snapshot_epoch").find('option').first().val() == $("#snapshot_epoch").val());
+                                        selected = $("#snapshot_epoch").val();
+                                    }
+                                    // remove old options
+                                    $("#snapshot_epoch").find("option").remove();
+                                    if (data.length)
+                                        $("#test-model-form").show();
+                                    for (var i=0; i<data.length; i++) {
+                                        option = data[i];
+                                        $("#snapshot_epoch").append('<option value="'+option[0]+'">'+option[1]+'</option>');
+                                    }
+                                    if (data.length) {
+                                        var value = selected;
+                                        if (!value || latest_selected)
+                                            value = data[0][0];
+                                        if (value)
+                                            $("#snapshot_epoch").val(value);
+                                    }
+                                }
+                                updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescape %});
+                            </script>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <button
+                            formaction="{{url_for('digits.model.images.generic.views.server_download', job_id=job.id())}}"
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            formtarget="_blank"
+                            class="btn btn-info">
+                            Download Model
+                        </button>
+                    </div>
+                </div>
                 <h2>Test Models</h2>
                 <div class="row">
                     <div class="form-group">

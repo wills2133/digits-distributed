@@ -1,6 +1,0 @@
-Tensorflow support disabled.
-now create ssd lmdb
-dataset_dir /home/wills/Projects/digits/digits/jobs/20180108-222752-c0b3/dataset_dir.txt
-dataset_dir /home/wills/data/VOCdevkit
-job_dir not found!
-2018-01-08 22:27:55 [INFO ] Generic DB creation Done

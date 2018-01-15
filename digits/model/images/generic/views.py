@@ -25,7 +25,7 @@ from digits.utils.forms import fill_form_if_cloned, save_form_to_job
 from digits.utils.routing import request_wants_json, job_from_request
 from digits.webapp import scheduler
 
-
+from flask import redirect
 
 blueprint = flask.Blueprint(__name__, __name__)
 #######################################################
@@ -482,7 +482,7 @@ def create(extension_id=None):
                     ))
                 except:
                     print 'server job error'
-                    raise
+                    raise Exception
 
             else:
                 try:
@@ -511,7 +511,7 @@ def create(extension_id=None):
                     ))
                 except:
                     print 'local job error'
-                    raise
+                    raise Exception
 
             # Save form data with the job so we can easily clone it later.
             save_form_to_job(job, form)
@@ -1500,7 +1500,7 @@ def show_sample():
 @blueprint.route('/http_server', methods=['POST', 'GET'])
 def http_server():
 
-    from flask import redirect
+    
     return redirect('http://localhost:1022/')
 #################
 
@@ -1559,3 +1559,20 @@ def upload_success():  # 所有分片均上传完后被调用
             os.remove(filename)  # 删除该分片，节约空间
     # print '/home/wills/Projects/digits-ssd/digits/static/upload_file/%s%s' % (task, ext)
     return new()
+
+#################
+@blueprint.route('/<job_id>/server_download',
+                 methods=['GET', 'POST'],
+                 defaults={'extension': 'tar.gz'})
+@blueprint.route('/<job_id>/server_download.<extension>',
+                 methods=['GET', 'POST'])
+def server_download(job_id, extension):
+    epoch = -1
+    # GET ?epoch=n
+    if 'epoch' in flask.request.args:
+        epoch = float(flask.request.args['epoch'])
+
+    # POST ?snapshot_epoch=n (from form)
+    elif 'snapshot_epoch' in flask.request.form:
+        epoch = float(flask.request.form['snapshot_epoch'])
+    return redirect('http://localhost:2134/{}/download?epoch={}'.format(job_id, epoch))

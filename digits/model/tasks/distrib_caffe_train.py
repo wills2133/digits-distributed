@@ -178,22 +178,20 @@ class DistributedTrainTask(CaffeTrainTask):
         sigterm_timeout = 2  # When should the SIGKILL signal be sent
 
         socket_time = None  #rescord last time get socket message
-        socket_timeout = 60
+        socket_timeout = 10
 
         thread_log = job_client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id, self.data_dir, self.network_type)
         try:
             n = 0
             if not os.path.exists(self.job_dir):
                 os.mkdir(self.job_dir)
-            f = open(self.job_dir, 'w')
+            f = open(self.job_dir+'/log.txt', 'w')
 
             while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
                 # print '**************************************************'
                 # print '--------------------------------------------------'
                 print 'digits is waiting for response...'
-                # print 'n', n
-                # print 'len( thread_log.log_list', len( thread_log.log_list )
-                # print 'line', line
+
                 if self.aborted.is_set():
                     if sigterm_time is None:
                         # Attempt graceful shutdown
@@ -201,9 +199,13 @@ class DistributedTrainTask(CaffeTrainTask):
                         thread_log.stop()
                         sigterm_time = time.time()
                         self.status = Status.ABORT
+                        # break
 
                 while n < len( thread_log.log_list ):
                     line = thread_log.log_list[n]
+                    # print 'n', n
+                    # print 'len( thread_log.log_list', len( thread_log.log_list )
+                    # print 'line', line
                     if line:
                         f.write(line)
                         socket_time = time.time()
@@ -226,6 +228,7 @@ class DistributedTrainTask(CaffeTrainTask):
 
                 if socket_time is not None:
                     print 'interval', (time.time() - socket_time)
+                    print '---thread_log.stopped', thread_log.stopped
                 if socket_time is not None and (time.time() - socket_time > socket_timeout):
                     self.logger.warning('get no response form server , abort task "%s"' % self.name())
                     job_client.abort_request( job_server_addr, self.job_dir, self.job_id)
@@ -252,122 +255,139 @@ class DistributedTrainTask(CaffeTrainTask):
             self.status = Status.DONE
             return True
 
-    # @override
-    # def process_output(self, line):
+    @override
+    def process_output(self, line):
         
-    #     float_exp = '(-NaN|NaN|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
+        float_exp = '(-NaN|NaN|[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?)'
 
-    #     self.caffe_log.write('%s\n' % line)
+        self.caffe_log.write('%s\n' % line)
 
-    #     self.caffe_log.flush()
-    #     # parse caffe output
-    #     timestamp, level, message = self.preprocess_output_caffe(line)
-    #     if not message:
-    #         return True
-
-    #     print '-----line', line
-    #     # iteration updates
-    #     match = re.match(r'Iteration (\d+)', message)
-    #     if match:
+        self.caffe_log.flush()
+        # parse caffe output
+        # print '-----line', line
+        timestamp, level, message = self.preprocess_output_caffe(line)
+        if not message:
+            return True
+        
+        # iteration updates
+        match = re.match(r'Iteration (\d+)', message)
+        if match:
             
-    #         i = int(match.group(1))
-    #         # print '-----Iteration = ', i
-    #         self.new_iteration(i)
+            i = int(match.group(1))
+            self.new_iteration(i)
 
-    #     # net output
-    #     # match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
-    #     match = re.match( r'Iteration (\d+), (\S*) = %s' % float_exp, message, flags = re.IGNORECASE )
+        # net output
+        # match = re.match(r'(Train|Test) net output #(\d+): (\S*) = %s' % float_exp, message, flags=re.IGNORECASE)
+        match = re.match( r'Iteration (\d+), (\S*) = %s' % float_exp, message, flags = re.IGNORECASE )
 
-    #     if match:
+        if match:
 
-    #         phase = int(match.group(1))
-    #         name = match.group(2)
-    #         value = match.group(3)
-    #         ########################
-    #         #-nan
-    #         # print '-----message = ', message
-    #         # print '-----phase = ', phase
-    #         # print '-----name = ', name
-    #         # print '-----value = ', value
-    #         if value.lower() == 'nan':
-    #             value = 0
-    #         # assert value.lower() != 'nan', \
-    #         #     'Network outputted %s for "%s" (%s phase). Try decreasing your learning rate.' % (value, name, phase)
-    #         ########################
-    #         value = float(value)
-    #         # Find the layer type
-    #         kind = '?'
-    #         for layer in self.network.layer:
-    #             if name in layer.top:
-    #                 kind = layer.type
-    #                 break
+            phase = int(match.group(1))
+            name = match.group(2)
+            value = match.group(3)
+            ########################
+            #-nan
+            # print '-----message = ', message
+            # print '-----phase = ', phase
+            # print '-----name = ', name
+            # print '-----value = ', value
+            if value.lower() == 'nan':
+                value = 0
+            # assert value.lower() != 'nan', \
+            #     'Network outputted %s for "%s" (%s phase). Try decreasing your learning rate.' % (value, name, phase)
+            ########################
+            value = float(value)
+            # Find the layer type
+            kind = '?'
+            for layer in self.network.layer:
+                if name in layer.top:
+                    kind = layer.type
+                    break
 
-    #         self.save_train_output(name, kind, value)
-    #         # if phase.lower() == 'train':
-    #         #     self.save_train_output(name, kind, value)
-    #         # elif phase.lower() == 'test':
-    #         #     self.save_val_output(name, kind, value)
-    #         # return True
+            self.save_train_output(name, kind, value)
+            # if phase.lower() == 'train':
+            #     self.save_train_output(name, kind, value)
+            # elif phase.lower() == 'test':
+            #     self.save_val_output(name, kind, value)
+            # return True
 
-    #     # # learning rate updates
-    #     # match = re.match(r'Iteration (\d+).*lr = %s' % float_exp, message, flags=re.IGNORECASE)
-    #     # if match:
-    #     #     i = int(match.group(1))
-    #     #     lr = float(match.group(2))
-    #     #     self.save_train_output('learning_rate', 'LearningRate', lr)
-    #     #     return True
+        # # learning rate updates
+        # match = re.match(r'Iteration (\d+).*lr = %s' % float_exp, message, flags=re.IGNORECASE)
+        # if match:
+        #     i = int(match.group(1))
+        #     lr = float(match.group(2))
+        #     self.save_train_output('learning_rate', 'LearningRate', lr)
+        #     return True
 
-    #     # # snapshot saved
-    #     # if self.saving_snapshot:
-    #     #     if not message.startswith('Snapshotting solver state'):
-    #     #         self.logger.warning(
-    #     #             'caffe output format seems to have changed. '
-    #     #             'Expected "Snapshotting solver state..." after "Snapshotting to..."')
-    #     #     else:
-    #     #         self.logger.debug('Snapshot saved.')
-    #     #     self.detect_snapshots()
-    #     #     self.send_snapshot_update()
-    #     #     self.saving_snapshot = False
-    #     #     return True
 
-    #     # # snapshot starting
-    #     # match = re.match(r'Snapshotting to (.*)\s*$', message)
-    #     # if match:
-    #     #     self.saving_snapshot = True
-    #     #     return True
 
-    #     if level in ['error', 'critical']:
-    #         self.logger.error('%s: %s' % (self.name(), message))
-    #         self.exception = message
-    #         return True
+        # snapshot starting # snapshot saved
+        match = re.search(r'model_iter_(\d*)', message)
+        if match:
+            iter_num = match.group(1)
+            self.logger.debug('Snapshot saved.')
+            # self.detect_snapshots()
 
-    #     return True
+            self.snapshots.append( ['model_iter_{}'.format(iter_num), str(iter_num)] )
+            self.send_snapshot_update()
+            self.saving_snapshot = False
+            return True
 
-    # def preprocess_output_caffe(self, line):
-    #     """
-    #     Takes line of output and parses it according to caffe's output format
-    #     Returns (timestamp, level, message) or (None, None, None)
-    #     """
-    #     # NOTE: This must change when the logging format changes
-    #     # LMMDD HH:MM:SS.MICROS pid file:lineno] message
-    #     # match = re.match(r'(\w)(\d{4} \S{8}).*]\s+(\S.*)$', line)
-    #     match = re.search(r'(\w)(\d{4} \S*)](.*)$', line)
-    #     if match:
-    #         # print '-----match = ', match.group(0)
-    #         level = match.group(1)
-    #         # add the year because caffe omits it
-    #         # timestr = '%s%s' % (time.strftime('%Y'), match.group(2))
-    #         message = match.group(3)
-    #         if level == 'I':
-    #             level = 'info'
-    #         elif level == 'W':
-    #             level = 'warning'
-    #         elif level == 'E':
-    #             level = 'error'
-    #         elif level == 'F':  # FAIL
-    #             level = 'critical'
-    #         # timestamp = time.mktime(time.strptime(timestr, '%Y%m%d %H:%M:%S'))
-    #         timestamp = time.mktime(time.strptime(time.strftime('%Y%m%d %H:%M:%S'), '%Y%m%d %H:%M:%S'))
-    #         return (timestamp, level, message)
-    #     else:
-    #         return (None, None, None)
+        # if level in ['error', 'critical']:
+        #     self.logger.error('%s: %s' % (self.name(), message))
+        #     self.exception = message
+        #     return True
+
+        return True
+
+    def preprocess_output_caffe(self, line):
+        """
+        Takes line of output and parses it according to caffe's output format
+        Returns (timestamp, level, message) or (None, None, None)
+        """
+        # NOTE: This must change when the logging format changes
+        # LMMDD HH:MM:SS.MICROS pid file:lineno] message
+        # match = re.match(r'(\w)(\d{4} \S{8}).*]\s+(\S.*)$', line)
+        match = re.match(r'(\w)(\d* \S*)] (.*)$', line)
+        if match:
+            # print '-----match = ', match.group(0)
+            level = match.group(1)
+            # add the year because caffe omits it
+            # timestr = '%s%s' % (time.strftime('%Y'), match.group(2))
+            message = match.group(3)
+            if level == 'I':
+                level = 'info'
+            elif level == 'W':
+                level = 'warning'
+            elif level == 'E':
+                level = 'error'
+            elif level == 'F':  # FAIL
+                level = 'critical'
+            # timestamp = time.mktime(time.strptime(timestr, '%Y%m%d %H:%M:%S'))
+            timestamp = time.mktime(time.strptime(time.strftime('%Y%m%d %H:%M:%S'), '%Y%m%d %H:%M:%S'))
+            return (timestamp, level, message)
+        else:
+            print '---------not match'
+            return (None, None, None)
+
+    def send_snapshot_update(self):
+        """
+        Sends socketio message about the snapshot list
+        """
+        from digits.webapp import socketio
+
+        socketio.emit('task update',
+                      {
+                          'task': self.html_id(),
+                          'update': 'snapshots',
+                          'data': self.snapshot_list(),
+                      },
+                      namespace='/jobs',
+                      room=self.job_id,
+                      )
+
+    def snapshot_list(self):
+        """
+        Returns an array of arrays for creating an HTML select field
+        """
+        return [[s[1], 'model_iter_%s' % s[1]] for s in reversed(self.snapshots)]

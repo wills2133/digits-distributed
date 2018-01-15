@@ -106,9 +106,9 @@ class thread_read_log(threading.Thread):
 
     def run(self):
         while not self.stopped:
+            
             try:
                 response = self.tcp.get_proto_message(self.res)
-                
                 for line in response.log_line:
                     self.log_list.append( line )
                     # write in the file
