@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<body>
+                <h2>Trained Models</h2>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label for="snapshot_epoch">Select Model</label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-8">
+                        <div class="form-group">
+                            <select id="snapshot_epoch" name="snapshot_epoch" class="form-control">
+                            </select>
+                            <script>
+                                function updateSnapshotList(data) {
+                                    var selected = null;
+                                    var latest_selected = true;
+                                    if ($("#snapshot_epoch").find('option').length) {
+                                        latest_selected = ($("#snapshot_epoch").find('option').first().val() == $("#snapshot_epoch").val());
+                                        selected = $("#snapshot_epoch").val();
+                                    }
+                                    // remove old options
+                                    $("#snapshot_epoch").find("option").remove();
+                                    if (data.length)
+                                        $("#test-model-form").show();
+                                    for (var i=0; i<data.length; i++) {
+                                        option = data[i];
+                                        $("#snapshot_epoch").append('<option value="'+option[0]+'">'+option[1]+'</option>');
+                                    }
+                                    if (data.length) {
+                                        var value = selected;
+                                        if (!value || latest_selected)
+                                            value = data[0][0];
+                                        if (value)
+                                            $("#snapshot_epoch").val(value);
+                                        var downloadbtn = document.getElementById('btn-download');
+                                        downloadbtn.formaction="http://localhost:2134/{{job.id())}}/download/" + value
+                                    }
+                                }
+                                updateSnapshotList({% autoescape false %}{{task.snapshot_list()}}{% endautoescape %});
+                            </script>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <button
+                            id = "btn-download"
+                            
+                            formmethod="post"
+                            formenctype="multipart/form-data"
+                            class="btn btn-info">
+                            Download Model
+                        </button>
+                    </div>
+                </div>
+
+</body>
+
+</html>
