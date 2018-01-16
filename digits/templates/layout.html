@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', ver=dir_hash) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/c3.min.css', ver=dir_hash) }}">
 
-    <title>{% block title %}DIGITS{% endblock %}</title>
+    <title>{% block title %}XJERA{% endblock %}</title>
 
     <script src="{{ url_for('static', filename='js/3rdparty/jquery-1.11.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/3rdparty/bootstrap-3.3.6.min.js') }}"></script>
@@ -36,7 +36,7 @@
 <div class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
         <div class="navbar-header">
-            <a class="navbar-brand" href="/">DIGITS</a>
+            <a class="navbar-brand" href="/">XJERA Training Platform</a>
         </div>
         <ul class="nav navbar-nav">
             {% block nav %}
@@ -58,25 +58,25 @@
                 {% if server_name %}
                 <li><span class="navbar-text">Server: {{server_name}}</span></li>
                 {% endif %}
-                <li><span class="navbar-text">DIGITS version: <br> {{server_version}}</span></li>
-                <li><span class="navbar-text">Caffe version: <br> {{caffe_version}}</span></li>
-                <li><span class="navbar-text">Caffe flavor: <br> {{caffe_flavor}}</span></li>
+                <li><span class="navbar-text">platform version: <br> {{server_version}}</span></li>
+                <li><span class="navbar-text">training server version: <br> {{caffe_version}}</span></li>
+                <li><span class="navbar-text">training server flavor: <br> {{caffe_flavor}}</span></li>
             </ul>
             </li>
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">About<span class="caret"></span></a>
                 <ul class="dropdown-menu about-menu navbar-inverse">
                     <li><span class="navbar-text"><a target="_blank" href="https://developer.nvidia.com/digits">
-                        DIGITS on developer.nvidia.com
+                        Use Giuide
                     </a></span></li>
                     <li><span class="navbar-text"><a target="_blank" href="https://github.com/NVIDIA/DIGITS">
-                        DIGITS on GitHub
+                        Xjera home page
                     </a></span></li>
                     <li><span class="navbar-text"><a target="_blank" href="https://groups.google.com/d/forum/digits-users">
-                        DIGITS user group
+                        Bug Report
                     </a></span></li>
                     <li><span class="navbar-text"><a href="mailto:digits@nvidia.com">
-                        digits@nvidia.com
+                        Contact Us
                     </a></span></li>
                 </ul>
             </li>

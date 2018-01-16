@@ -26,15 +26,15 @@ class DatasetForm(Form):
             else:
                 return True
 
-
     voc_folder = utils.forms.StringField(
-        u'VOC Folder',
+        u'VOC folder',
         validators=[
             validators.DataRequired(),
             # validate_folder_path,
         ],
         tooltip="Specify the path to the voc folder"
     )
+    
     dataset_server_ip = utils.forms.StringField(
         'Dataset server ip',
         validators=[

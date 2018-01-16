@@ -401,7 +401,6 @@ class DbCreator(object):
 
         logger.info('Created mean file for stage %s in %s' % (stage, mean_file))
 
-
 def create_ssd_db(
             extension,
             stage, #test_db
@@ -414,8 +413,7 @@ def create_ssd_db(
 
     voc_path = extension.itemize_entries(stage) #sample names
     _feature, _label = extension.encode_entry(dataset_dir)
-    # voc_path='$HOME/data/VOCdevkit/' dataset_dir='.'
-    
+    # voc_path='$HOME/data/VOCdevkit/' dataset_dir='.'    
 
 
 def create_generic_db(jobs_dir, dataset_id, stage):
@@ -450,7 +448,9 @@ def create_generic_db(jobs_dir, dataset_id, stage):
 
     force_same_shape = dataset.force_same_shape
 
-    if extension_id == 'ssd_pascal':
+    if extension_id == 'CloudTraining':
+        extension.process_dataset(dataset_dir)
+    elif extension_id == 'ssd_pascal':
         create_ssd_db(
             extension,
             stage, #test_db
@@ -460,6 +460,7 @@ def create_generic_db(jobs_dir, dataset_id, stage):
             feature_encoding,
             label_encoding,
             force_same_shape)
+        
     else:
         # create main DB creator object and execute main method
         db_creator = DbCreator()
