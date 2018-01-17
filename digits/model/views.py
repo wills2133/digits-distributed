@@ -276,12 +276,10 @@ def download(job_id, extension):
     # GET ?epoch=n
     if 'epoch' in flask.request.args:
         epoch = float(flask.request.args['epoch'])
-        print 'epoch-------', epoch
 
     # POST ?snapshot_epoch=n (from form)
     elif 'snapshot_epoch' in flask.request.form:
         epoch = float(flask.request.form['snapshot_epoch'])
-        print 'epoch2-------', epoch
 
     # Write the stats of the job to json,
     # and store in tempfile (for archive)

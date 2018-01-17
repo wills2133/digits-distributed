@@ -23,6 +23,8 @@ from digits.status import Status
 from digits.utils import subclass, override, constants
 from digits.utils.filesystem import tail
 
+import werkzeug.exceptions
+
 # Must import after importing digit.config
 import caffe
 import caffe_pb2
@@ -177,8 +179,8 @@ class DistributedTrainTask(CaffeTrainTask):
         sigterm_time = None  # When was the SIGTERM signal sent
         sigterm_timeout = 2  # When should the SIGKILL signal be sent
 
-        socket_time = None  #rescord last time get socket message
-        socket_timeout = 10
+        socket_time = time.time()  #rescord last time get socket message
+        socket_timeout = 600
 
         thread_log = job_client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id, self.data_dir, self.network_type)
         try:
@@ -226,25 +228,20 @@ class DistributedTrainTask(CaffeTrainTask):
                     time.sleep(0.1)
                     break
 
-                if socket_time is not None:
-                    print 'interval', (time.time() - socket_time)
-                    print '---thread_log.stopped', thread_log.stopped
-                if socket_time is not None and (time.time() - socket_time > socket_timeout):
-                    self.logger.warning('get no response form server , abort task "%s"' % self.name())
-                    job_client.abort_request( job_server_addr, self.job_dir, self.job_id)
-                    thread_log.stop()
-                    # self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
-                    time.sleep(0.1)
-                    break
+                # print 'interval', (time.time() - socket_time)
+                # if (time.time() - socket_time > socket_timeout):
+                #     raise werkzeug.exceptions.Forbidden('get no response form server, abort job')
                     
                 time.sleep(0.5)
             f.close()
-        except:
+        except Exception as RUN_ERROR:
             print 'interupt while training!'
             job_client.abort_request( job_server_addr, self.job_dir, self.job_id)
             thread_log.stop()
             self.after_run()
-            raise
+            self.status = Status.ERROR
+            time.sleep(0.1)
+            raise RUN_ERROR
         
         self.after_run()
 
@@ -310,6 +307,8 @@ class DistributedTrainTask(CaffeTrainTask):
             # elif phase.lower() == 'test':
             #     self.save_val_output(name, kind, value)
             # return True
+        # else:
+        #     print 'Iteration message no match'
 
         # # learning rate updates
         # match = re.match(r'Iteration (\d+).*lr = %s' % float_exp, message, flags=re.IGNORECASE)
@@ -325,14 +324,19 @@ class DistributedTrainTask(CaffeTrainTask):
         match = re.search(r'model_iter_(\d*)', message)
         if match:
             iter_num = match.group(1)
-            self.logger.debug('Snapshot saved.')
-            # self.detect_snapshots()
+            with open(self.job_dir+'/model_list.txt', 'a+') as f:
+                f.write('model_iter_{}\n'.format(iter_num))
 
-            self.snapshots.append( ['model_iter_{}'.format(iter_num), str(iter_num)] )
+            self.logger.debug('Snapshot saved.')
+
+            self.detect_snapshots()
+
+            # self.snapshots.append( ['model_iter_{}'.format(iter_num), str(iter_num)] )
             self.send_snapshot_update()
             self.saving_snapshot = False
             return True
-
+        # else:
+        #     print 'model creating message no match'
         # if level in ['error', 'critical']:
         #     self.logger.error('%s: %s' % (self.name(), message))
         #     self.exception = message
@@ -348,9 +352,8 @@ class DistributedTrainTask(CaffeTrainTask):
         # NOTE: This must change when the logging format changes
         # LMMDD HH:MM:SS.MICROS pid file:lineno] message
         # match = re.match(r'(\w)(\d{4} \S{8}).*]\s+(\S.*)$', line)
-        match = re.match(r'(\w)(\d* \S*)] (.*)$', line)
+        match = re.search(r'(\w)(\d* \S*)] (.*)$', line)
         if match:
-            # print '-----match = ', match.group(0)
             level = match.group(1)
             # add the year because caffe omits it
             # timestr = '%s%s' % (time.strftime('%Y'), match.group(2))
@@ -367,7 +370,7 @@ class DistributedTrainTask(CaffeTrainTask):
             timestamp = time.mktime(time.strptime(time.strftime('%Y%m%d %H:%M:%S'), '%Y%m%d %H:%M:%S'))
             return (timestamp, level, message)
         else:
-            print '---------not match'
+            # print 'symbol message not match'
             return (None, None, None)
 
     def send_snapshot_update(self):
@@ -385,6 +388,35 @@ class DistributedTrainTask(CaffeTrainTask):
                       namespace='/jobs',
                       room=self.job_id,
                       )
+
+    @override
+    def detect_snapshots(self):
+        self.snapshots = []
+
+        model_list_path = self.job_dir+'/model_list.txt'
+        snapshots = []
+        # find models
+        if os.path.exists(model_list_path):
+            with open(model_list_path, 'r') as f:
+                model_list = f.readlines()
+            for model in model_list:
+                iter_num = int( model.split('_')[2] )
+                snapshots.append((
+                    'model_iter_{}'.format(iter_num),
+                    iter_num
+                ))
+
+        # else:
+        #     print 'model_list_path not found'
+
+        # delete all but the most recent solverstate
+        # for filename, iteration in sorted(solverstates, key=lambda tup: tup[1])[:-1]:
+        #     # print 'Removing "%s"' % filename
+        #     os.remove(filename)
+
+        self.snapshots = sorted(snapshots, key=lambda tup: tup[1])
+
+        return len(self.snapshots) > 0
 
     def snapshot_list(self):
         """

@@ -23,7 +23,7 @@
         var task_id = WebUploader.Base.guid();
         var uploader = WebUploader.create({
             swf: './static/webuploader/Uploader.swf',
-            server: '{{ url_for("choose", dataset_folder = dataset_folder) }}',
+            server: '{{ url_for("upload", dataset_folder = dataset_folder) }}',
             pick: '#picker',
             auto: true,
             chunked: true,

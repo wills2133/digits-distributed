@@ -68,7 +68,6 @@ def create_lmdbs(folder, image_width=None, image_height=None, image_count=None):
         image_db = lmdb.open(os.path.join(folder, '%s_images' % phase),
                              map_async=True,
                              max_dbs=0)
-        print '-----%s_images' % phase
         label_db = lmdb.open(os.path.join(folder, '%s_labels' % phase),
                              map_async=True,
                              max_dbs=0)

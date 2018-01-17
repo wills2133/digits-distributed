@@ -98,7 +98,7 @@ class LmdbWriter(DbWriter):
     def create_lmdb(self, db_type):
         sub_dir = os.path.join(self.stage, db_type)
         db_dir = os.path.join(self._dir, sub_dir)
-        print '-----db_dir', db_dir
+        # print '-----db_dir', db_dir
         db = lmdb.open(
             db_dir,
             map_async=True,
@@ -294,7 +294,6 @@ class DbCreator(object):
                   force_same_shape):
         # retrieve itemized list of entries
         entry_ids = extension.itemize_entries(stage) #sample names
-        print 'mark3'
         entry_count = len(entry_ids)
         if entry_count > 0:
             # create a queue to write errors to
@@ -308,7 +307,6 @@ class DbCreator(object):
                 encoder_queue.put(batch)
 
             # create db writer
-            print 'mark2'
             writer = LmdbWriter(
                 dataset_dir,
                 stage,

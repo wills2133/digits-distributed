@@ -10,7 +10,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name="distrib_dataset",
+    name="distrib_training",
     version="0.0.1",
     author="Wills",
     description=("A data ingestion plugin for cloud server training"),
@@ -19,7 +19,7 @@ setup(
     packages=find_packages(),
     entry_points={
         DIGITS_PLUGIN_GROUP: [
-            'class=distribDataset:DataIngestion',
+            'class=distribTraining:DataIngestion',
         ]
     },
     include_package_data=True,

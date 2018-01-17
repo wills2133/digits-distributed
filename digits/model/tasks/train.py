@@ -440,6 +440,7 @@ class TrainTask(Task):
         """
         return snapshot file for specified epoch
         """
+        print '--------get_snapshot'
         snapshot_filename = None
 
         if len(self.snapshots) == 0:

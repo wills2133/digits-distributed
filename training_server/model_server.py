@@ -124,6 +124,7 @@ class thread_train_job(threading.Thread):
         server_log.debug( 'job argument: {}'.format(self.proto_req.arguments) )
         args = self.proto_req.arguments.split()
         args[2] = '--solver=./solver.prototxt'
+        # args = ['/home/server/DigitsProj/training/bin/TrainProcess', '../job/solver', '../job/model','pretrained.caffemodel']
         print args
         # execute train job in sub process 
         self.sub_p = subprocess.Popen( args,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
@@ -147,7 +148,7 @@ class thread_train_job(threading.Thread):
     def run(self):
 
         # log_file_path = self.execute_args()
-        log_file_path = '/home/wills/Projects/digits-ssd/server_for_job/test/create.log'
+        log_file_path = './test/create.log'
 
         # interval = interval * 1000
         last_line_num = 0
@@ -244,11 +245,10 @@ def run_training_server(ip, port):
     
     job_list = {}
 
+
     while True:
-
         try:
-            server_log.debug('Server is waiting for connection...')
-
+            server_log.debug('Server is waiting for connection......')
             # check if job is done or stopped, if is, remove job
             for key in list(job_list):
                 server_log.debug( 'job_id: {}'.format(key) )

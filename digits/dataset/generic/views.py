@@ -225,7 +225,7 @@ def dataset_server(extension_id):
     extension_form = extension.get_dataset_form()
     dataset_server_ip = extension_form.dataset_server_ip.data
     dataset_server_port = extension_form.dataset_server_port.data
-    dataset_folder = extension_form.voc_folder.data
+    dataset_folder = extension_form.server_dataset_folder.data
     # print 'dataset_server_ip', extension_form.dataset_server_ip.data
     # print 'dataset_server_port', extension_form.dataset_server_port.data
     # print 'voc_folder', extension_form.voc_folder.data

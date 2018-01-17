@@ -1499,8 +1499,6 @@ def show_sample():
 @blueprint.route('/http_server.json', methods=['POST'])
 @blueprint.route('/http_server', methods=['POST', 'GET'])
 def http_server():
-
-    
     return redirect('http://localhost:1022/')
 #################
 
@@ -1521,44 +1519,77 @@ def get_default_standard_network():
     return 'detection'
 
 ################
-# @blueprint.route('/upload./<extension_id>.json', methods=['POST'])
-@blueprint.route('/upload', methods=['GET', 'POST'])
-def upload():  # 一个分片上传后被调用
+@blueprint.route('/upload/<job_id>', methods=['GET', 'POST'])
+def upload(job_id):  # run after one  chunk is uploaded
+    print job_id
     if flask.request.method == 'POST':
-        upload_file = flask.request.files['file']
-        task = flask.request.form.get('task_id')  # 获取文件唯一标识符
-        chunk = flask.request.form.get('chunk', 0)  # 获取该分片在所有分片中的序号
-        filename = '%s%s' % (task, chunk)  # 构成该分片唯一标识符
 
-    # print '/home/wills/Projects/digits-ssd/digits/static/upload_file/%s' % filename
-    upload_file.save('/home/%s' % filename)  # 保存分片到本地
-    
-    return new()
+        upload_file = flask.request.files['file']
+        task = flask.request.form.get('task_id')  # get file id in upload process
+        chunk = flask.request.form.get('chunk', 0)  # get chunk number in all chunks
+        filename = '%s%s' % (task, chunk)  # coustruct chunk id
+
+        # raw_input('pause here')
+        save_dir = '/home/wills/testImg'  #  dir to save file
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+        upload_file.save( save_dir + '/' + filename )  # save chunk in local path
+            
+    return flask.redirect(flask.url_for('digits.model.views.show', job_id=job_id))
 
 # @blueprint.route('/upload_success/<extension_id>.json', methods=['POST'])
-@blueprint.route('/upload_success', methods=['GET', 'POST'])
-def upload_success():  # 所有分片均上传完后被调用
-
+@blueprint.route('/upload_success/<job_id>', methods=['GET', 'POST'])
+def upload_success(job_id):  # run after all the chunks is upload
     task = flask.request.args.get('task_id')
     ext = flask.request.args.get('ext', '')
     upload_type = flask.request.args.get('type')
     if len(ext) == 0 and upload_type:
         ext = upload_type.split('/')[1]
-    ext = '' if len(ext) == 0 else '.%s' % ext  # 构建文件后缀名
+    ext = '' if len(ext) == 0 else '.%s' % ext  # construct file name
     chunk = 0
-    with open('/home/%s%s' % (task, ext), 'w') as target_file:  # 创建新文件
-        while True:
-            try:
-                filename = '/home/%s%d' % (task, chunk)
-                source_file = open(filename, 'r')  # 按序打开每个分片
-                target_file.write(source_file.read())  # 读取分片内容写入新文件
-                source_file.close()
-            except IOError:
-                break
-            chunk += 1
-            os.remove(filename)  # 删除该分片，节约空间
+
+    save_dir = '/home/wills/testImg'  #  dir to save file
+    file_path = save_dir + '/' + task + ext #  filename to save file
+    
+    target_file =  open( file_path, 'w' ) # crate new files
+    while True:
+        try:
+            filename = save_dir + '/' + task + str(chunk)
+            source_file = open(filename, 'r')  # open chunks in order
+            target_file.write(source_file.read())  # fill the new file with chunks
+            source_file.close()
+        except IOError:
+            break
+        chunk += 1
+        os.remove(filename)  # delect chunks
+    target_file.close()
+
+    extract_dir = save_dir + '/tasks'
+    # dataset_dir = save_dir + '/' + 'dataset'
+    if ext == '.zip':
+        import zipfile
+        """unzip zip file"""
+        zip_file = zipfile.ZipFile(file_path)
+        if  not os.path.isdir(extract_dir):
+            os.mkdir(extract_dir)
+        for names in zip_file.namelist():
+            zip_file.extract(names, extract_dir)
+        zip_file.close()
+        # os.rename(extract_dir, dataset_dir)
+
+    if ext == '.rar':
+        print 'unrar'
+        import rarfile
+        """unrar zip file"""
+        rar = rarfile.RarFile(file_path)
+        if not os.path.isdir(extract_dir):
+            os.mkdir(extract_dir)
+        os.chdir(extract_dir)
+        rar.extractall()
+        rar.close()
+        # os.rename(extract_dir, dataset_dir)
     # print '/home/wills/Projects/digits-ssd/digits/static/upload_file/%s%s' % (task, ext)
-    return new()
+    return flask.redirect(flask.url_for('digits.model.views.show', job_id=job_id))
 
 #################
 @blueprint.route('/<job_id>/server_download',

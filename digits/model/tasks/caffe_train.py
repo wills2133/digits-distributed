@@ -1130,7 +1130,7 @@ class CaffeTrainTask(TrainTask):
             return
 
         self.current_iteration = it
-        print 
+        # print 
         self.send_progress_update(self.iteration_to_epoch(it))
 
     def send_snapshot_update(self):
