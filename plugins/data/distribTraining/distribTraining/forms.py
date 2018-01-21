@@ -27,15 +27,6 @@ class DatasetForm(Form):
                 return True
 
 
-    server_dataset_folder = utils.forms.StringField(
-        u'Server Dataset Folder',
-        validators=[
-            validators.DataRequired(),
-            # validate_folder_path,
-        ],
-        tooltip="Specify the path to the dataset folder in training server to upload"
-    )
-
     dataset_server_ip = utils.forms.StringField(
         'Dataset server ip',
         validators=[
@@ -50,7 +41,14 @@ class DatasetForm(Form):
         tooltip="Dataset server port in format 'xxxx'."
     )
 
-
+    server_dataset_folder = utils.forms.StringField(
+        u'Server Dataset Folder',
+        validators=[
+            # validators.DataRequired(),
+            # validate_folder_path,
+        ],
+        tooltip="Specify the path to the dataset folder in training server to upload"
+    )
 
 @subclass
 class InferenceForm(Form):

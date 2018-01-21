@@ -1,5 +1,0 @@
-Tensorflow support disabled.
-now create ssd lmdb
-dataset_dir /home/wills/Projects/digits-ssd/digits/jobs/20180110-024447-6cd2/dataset_dir.txt
-dataset_dir eee
-2018-01-10 02:44:58 [INFO ] Generic DB creation Done

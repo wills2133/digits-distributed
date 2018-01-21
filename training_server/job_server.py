@@ -177,9 +177,9 @@ def main():
 
 if __name__ == '__main__':
 
-    dataset_id = '0.0.0.0'
+    dataset_ip = '0.0.0.0'
     dataset_port = 2134
-    model_id = '0.0.0.0'
+    model_ip = '0.0.0.0'
     model_port = 2133
 
     try:

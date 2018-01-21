@@ -29,14 +29,18 @@ class DataIngestion(DataIngestionInterface):
 
     def process_dataset(self, job_dir):
         dataset_dir = self.userdata['server_dataset_folder']
-        dataset_dir_file = job_dir + '/dataset_dir.txt'
+        server_ip = self.userdata['dataset_server_ip']
+        server_port = self.userdata['dataset_server_port']
+        server_job_info = job_dir + '/server_job_info.txt'
 
         if not os.path.exists(job_dir):
             print 'job_dir not found!'
             print 'create job_dir!'
             os.mkdir(job_dir)
-        f = open(dataset_dir_file, 'w')
-        f.write(dataset_dir)
+        f = open(server_job_info, 'w')
+        f.write(server_ip+'\n')
+        f.write(server_port+'\n')
+        f.write(dataset_dir+'\n')
         f.close()
 
     @staticmethod

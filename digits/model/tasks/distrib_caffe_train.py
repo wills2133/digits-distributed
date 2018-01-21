@@ -182,12 +182,25 @@ class DistributedTrainTask(CaffeTrainTask):
         socket_time = time.time()  #rescord last time get socket message
         socket_timeout = 600
 
-        thread_log = job_client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id, self.data_dir, self.network_type)
+        # save dataset server info
+        try:
+            f_info_r = open(self.data_dir+'/server_job_info.txt', 'r')
+            server_info = f_info_r.readlines()
+            f_info_w = open(self.job_dir+'/server_job_info.txt', 'w')
+            f_info_w.writelines(server_info)
+            f_info_r.close()
+            f_info_w.close()
+        except Exception:
+            print 'error when creating' + self.job_dir + '/server_job_info.txt'
+            raise
+
+
+        thread_log = job_client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id, self.network_type)
         try:
             n = 0
             if not os.path.exists(self.job_dir):
                 os.mkdir(self.job_dir)
-            f = open(self.job_dir+'/log.txt', 'w')
+            f = open(self.job_dir+'/log.txt', 'w') #save log file
 
             while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
                 # print '**************************************************'

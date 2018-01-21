@@ -426,9 +426,12 @@
                             </script>
                         </div>
                     </div>
+                    <div style="display:none">
+                        <input id="job_dir" name="job_dir" value="{{job.dir()}}"> 
+                    </div>
                     <div class="col-sm-4">
                         <button
-                            formaction="{{url_for('digits.model.images.generic.views.server_download', job_id=job.id())}}"
+                            formaction="{{url_for('digits.model.images.generic.views.server_download', job_id= job.id() ) }}"
                             formmethod="post"
                             formenctype="multipart/form-data"
                             formtarget="_blank"

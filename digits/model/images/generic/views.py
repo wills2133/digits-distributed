@@ -1595,15 +1595,30 @@ def upload_success(job_id):  # run after all the chunks is upload
 @blueprint.route('/<job_id>/server_download',
                  methods=['GET', 'POST'],
                  defaults={'extension': 'tar.gz'})
-@blueprint.route('/<job_id>/server_download.<extension>',
+@blueprint.route('/<job_dir>/server_download.<extension>',
                  methods=['GET', 'POST'])
 def server_download(job_id, extension):
-    epoch = -1
+    
+    iter_num = -1
     # GET ?epoch=n
     if 'epoch' in flask.request.args:
-        epoch = float(flask.request.args['epoch'])
+        iter_num = float(flask.request.args['epoch'])
 
     # POST ?snapshot_epoch=n (from form)
     elif 'snapshot_epoch' in flask.request.form:
-        epoch = float(flask.request.form['snapshot_epoch'])
-    return redirect('http://localhost:2134/{}/download?epoch={}'.format(job_id, epoch))
+        iter_num = float(flask.request.form['snapshot_epoch'])
+
+    if 'job_dir' in flask.request.form:
+        job_dir = flask.request.form['job_dir']
+
+    try:
+        print job_dir + '/server_job_info.txt'
+        f = open(job_dir + '/server_job_info.txt')
+        server_job_info = f.readlines()
+        server_ip = server_job_info[0].rstrip('\n')
+        server_port = server_job_info[1].rstrip('\n')
+        f.close()
+    except:
+        print 'server_download: cannot find server_job_info.txt'
+        raise
+    return redirect('http://{}:{}/{}/download?iter={}'.format(server_ip, server_port, job_id, iter_num))

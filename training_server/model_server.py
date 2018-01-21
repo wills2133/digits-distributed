@@ -81,7 +81,7 @@ class ProtoTCP:
             
         return buf
 
-    def send_message(self, proto_rep):
+    def send_message(self, proto_res):
         # print 'sending....'
         """ Send a serialized message (protobuf Message interface)
             to a socket, prepended by its length packed in 4
@@ -89,18 +89,20 @@ class ProtoTCP:
         """
         #s = message.SerializeToString()
         # packed_len = struct.pack(self.packformat, len(message))
-        message = proto_rep.SerializeToString()
+        message = proto_res.SerializeToString()
         packed_len = str(len(message) + 100000000)
         self.log.debug("Sending msg of length: {0}".format(packed_len))
         self.sock.sendall(packed_len + message)
 
+    def close(self):
+        self.sock.close()
 class thread_train_job(threading.Thread):
-    def __init__(self, proto_req, proto_rep, tcp, interval):
+    def __init__(self, proto_req, proto_res, tcp, interval):
         threading.Thread.__init__(self)
         self.tcp = tcp
         self.interval = interval
         self.proto_req = proto_req
-        self.proto_rep = proto_rep
+        self.proto_res = proto_res
         self.job_done = False
         self.stopped = False
 
@@ -113,19 +115,18 @@ class thread_train_job(threading.Thread):
         if not os.path.exists(job_dir):
             os.mkdir(job_dir)
 
-        # save solver.protxt
-        f = open( os.path.join( job_dir, 'solver.prototxt' ), 'w' )
-        f.write( self.proto_req.solver )
-        f.close()
-        # save train_net.protxt
-        f = open( os.path.join( job_dir, 'train_val.prototxt' ), 'w' )
-        f.write( self.proto_req.train_val_net )
-        f.close()
+        # # save solver.protxt
+        # f = open( os.path.join( job_dir, 'solver.prototxt' ), 'w' )
+        # f.write( self.proto_req.solver )
+        # f.close()
+        # # save train_net.protxt
+        # f = open( os.path.join( job_dir, 'train_val.prototxt' ), 'w' )
+        # f.write( self.proto_req.train_val_net )
+        # f.close()
         server_log.debug( 'job argument: {}'.format(self.proto_req.arguments) )
         args = self.proto_req.arguments.split()
         args[2] = '--solver=./solver.prototxt'
         # args = ['/home/server/DigitsProj/training/bin/TrainProcess', '../job/solver', '../job/model','pretrained.caffemodel']
-        print args
         # execute train job in sub process 
         self.sub_p = subprocess.Popen( args,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
             cwd=job_dir, close_fds=True, )
@@ -135,15 +136,15 @@ class thread_train_job(threading.Thread):
 
     def sent_log(self, lines, is_end):
 
-        self.proto_rep.Clear()
-        self.proto_rep.log_end = is_end
+        self.proto_res.Clear()
+        self.proto_res.log_end = is_end
         line_num = len(lines)
-        self.proto_rep.line_num = str( line_num )
+        self.proto_res.line_num = str( line_num )
         # send log if get lines
-        self.proto_rep.log_line.extend(lines)
-        self.tcp.send_message(self.proto_rep)
+        self.proto_res.log_line.extend(lines)
+        self.tcp.send_message(self.proto_res)
         print 'is_end', is_end
-        print '{} lines sent'.format(self.proto_rep.line_num)
+        print '{} lines sent'.format(self.proto_res.line_num)
 
     def run(self):
 
@@ -200,6 +201,7 @@ class thread_train_job(threading.Thread):
             else:
                 server_log.debug('training job is done!')
                 # self.sub_p.terminate()
+            self.tcp.close()
             
         
         except Exception as thread_err:
@@ -232,6 +234,144 @@ class thread_train_job(threading.Thread):
 
     def is_job_done(self):
         return self.stopped
+
+class thread_test_job(threading.Thread):
+    def __init__(self, proto_req, proto_res, tcp, interval):
+        threading.Thread.__init__(self)
+        self.tcp = tcp
+        self.interval = interval
+        self.proto_req = proto_req
+        self.proto_res = proto_res
+        self.job_done = False
+        self.stopped = False
+        
+
+        
+    def create_model_file(self):
+        model_dir = './'+self.proto_req.job_id+'/model_iter_'+self.proto_req.job_id
+        if os.path.exists(model_dir):
+            self.proto_res.model_exists = True
+            self.start()
+        else:
+            self.proto_res.model_exists = False
+            self.f = open(model_dir, 'wb')
+        self.tcp.send_message(self.proto_res)
+        
+    def save_model(self, req_test):
+        if req_test.model_seg:
+            print('----receiving data...')
+            self.write(req_test.model_seg)
+        else:
+            print('----received empty data')
+
+
+    def execute_args(self):
+
+        server_log.debug('training thread begins')
+        job_dir = './' + self.proto_req.job_id ### set job dir
+        if not os.path.exists(job_dir):
+            os.mkdir(job_dir)
+
+        server_log.debug( 'job argument: {}'.format(self.proto_req.arguments) )
+        args = self.proto_req.arguments.split()
+        args[2] = '--solver=./solver.prototxt'
+        # args = ['/home/server/DigitsProj/training/bin/TrainProcess', '../job/solver', '../job/model','pretrained.caffemodel']
+        # execute train job in sub process 
+        self.sub_p = subprocess.Popen( args,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
+            cwd=job_dir, close_fds=True, )
+        # return self.sub_p.stdout
+        # os.system(args)
+
+    def sent_log(self, lines, is_end):
+        pass
+
+    def run(self):
+        try:
+            self.execute_args()
+        except Exception as thread_err:
+            server_log.debug('Thread Error: {}'.format(thread_err) )
+            server_log.debug('Thread was interupted')
+            self.stop()
+            self.sent_log(lines, True)
+            return
+
+    def stop(self):
+        server_log.debug('stop training thread') 
+        # self.sub_p.terminate()
+        self.stopped = True
+
+    def is_job_done(self):
+        return self.stopped
+
+class thread_req_test(threading.Thread):
+    def __init__(self, proto_req, proto_req_test, tcp):
+        threading.Thread.__init__(self)
+        self.tcp = tcp
+        self.interval = interval
+        self.proto_req = proto_req
+        self.proto_req_test = proto_req_test
+        self.job_done = False
+        self.stopped = False
+
+    def send_req_test(self):
+        self.proto_req_test.job_id = self.proto_req.job_id
+        self.proto_req_test = self.proto_req.TEST
+        self.tcp.send_message(self.proto_req_test) # send test arguments
+
+    def run(self):
+
+        
+        self.proto_req_test.arguments = 'caffe/predict jobxxxx/model'
+        self.send_req_test() #send a test job request
+
+        res_test = proto.Response()
+        proto_res_test = self.tcp.get_proto_message(res_test)
+
+        if not proto_res_test.model_exists:
+
+            try:
+                filename = '../111.zip'
+                f = open(filename, 'rb')
+                model_seg = 'initalize' #make it not empty
+
+                while (model_seg) and (not self.stopped):
+                    print('sent ', repr(model_seg))
+                    model_seg = f.read(1024)
+                    self.proto_req_test.model_seg = model_seg
+                    self.proto_req_test.arguments = '--transfering'
+                    self.send_req_test()
+
+                self.proto_req_test.arguments = '--transfered'
+                self.send_req_test()
+                f.close()
+
+                
+                if self.stopped:
+                    server_log.debug('transfering test job is aborted!')
+                    # self.sub_p.terminate()
+                else:
+                    server_log.debug('transfering test job is done!')
+                    # self.sub_p.terminate()
+                self.tcp.close()
+                
+            
+            except Exception as thread_err:
+
+                server_log.debug('Thread Error: {}'.format(thread_err) )
+                server_log.debug('Thread was interupted')
+                self.stop()
+                self.sent_log(lines, True)
+
+        
+
+    def stop(self):
+        server_log.debug('stop transfering test job thread') 
+        # self.sub_p.terminate()
+        self.stopped = True
+
+    def is_job_done(self):
+        return self.stopped
+
 
 def run_training_server(ip, port):
     req = proto.Request()
@@ -284,6 +424,47 @@ def run_training_server(ip, port):
 
             if request.command == proto.Request.DELETE:
                 pass
+
+            if request.command == proto.Request.REQTEST:
+                # create socket object
+                req_test = proto.Request()
+                sock_test = socket.socket()
+
+                # get local machine address
+                host = socket.gethostname()
+                # reserve a port for a service
+                port = 2132
+
+                sock_test.connect((host, port))
+                tcp_test = ProtoTCP(sock_test)
+                if request.job_id not in job_list:
+                    job_list[request.job_id] = thread_req_test(request, req_test, tcp_test)
+                    job_list[request.job_id].start()
+                else:
+                    server_log.debug('job {} exists, restart job'.format(request.job_id) ) 
+                    job_list[request.job_id].stop()
+                    del job_list[request.job_id]
+                    job_list[request.job_id] = thread_req_test(request, req_test, tcp_test)
+                    job_list[request.job_id].start()
+
+            if request.command == proto.Request.TEST:
+                tcp_res = ProtoTCP(sock_client)
+                if request.arguments == '--transfering':
+                    job_list[request.job_id].save_model()
+                    pass
+                elif request.arguments == '--transfered':
+                    job_list[request.job_id].start()
+                    pass
+                else:
+                    if request.job_id not in job_list:
+                        job_list[request.job_id] = thread_test_job(request, res, tcp_res)
+                        job_list[request.job_id].create_model_file()
+                    else:
+                        server_log.debug('job {} exists, restart job'.format(request.job_id) ) 
+                        job_list[request.job_id]. stop()
+                        del job_list[request.job_id]
+                        job_list[request.job_id] = thread_test_job(request, res, tcp_res)
+                        job_list[request.job_id].create_model_file()
 
             # check if job is done or stopped, if is, remove job
             for key in list(job_list):

@@ -95,6 +95,9 @@ class ProtoTCP:
         self.log.debug("Sending msg of length: {0}".format(packed_len))
         self.sock.sendall(packed_len + message)
 
+    def close(self):
+        self.sock.close()
+
 class thread_read_log(threading.Thread):
 
     def __init__(self, tcp, res):
@@ -124,8 +127,9 @@ class thread_read_log(threading.Thread):
     def stop(self):
         print 'stop thread_read_log'
         self.stopped = True
+        tcp.close()
 
-def training_request(addr, args, job_dir, job_id, data_dir, network_type):
+def training_request(addr, args, job_dir, job_id, network_type):
 
     req = proto.Request()
     res = proto.Response()
@@ -149,11 +153,11 @@ def training_request(addr, args, job_dir, job_id, data_dir, network_type):
         raise
 
     try:
-        f = open(data_dir + '/dataset_dir.txt')
-        dataset_dir = f.readlines()[0]
+        f = open(job_dir + '/server_job_info.txt')
+        dataset_dir = f.readlines()[2]
         f.close()
     except:
-        print 'cannot find dataset_dir_file.txt'
+        print 'cannot find server_job_info.txt'
         raise
 
     req.job_id = job_id
@@ -209,10 +213,11 @@ if __name__ == '__main__':
     job_id = '20171201-012717-3d11'
     args = '/home/wills/Projects/caffe-ssd/build/tools/caffe train --solver=/home/wills/Projects/digits/digits/jobs/{}/solver.prototxt'.format(job_id)
     job_dir = '/home/wills/Projects/digits/digits/jobs/{}'.format(job_id)
-    data_dir = 'data_dir'
+    network_type = ''
 
 
-    thread_log = training_request( (ip , port), args , job_dir, job_id, data_dir)
+
+    thread_log = training_request( (ip , port), args , job_dir, job_id, network_type)
     n = 0
     while ( not thread_log.stopped ) or ( n < len( thread_log.log_list ) ):
         print 'n', n

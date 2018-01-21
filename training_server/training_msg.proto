@@ -1,0 +1,41 @@
+syntax = "proto2";
+
+package TrainingMsg;
+
+message Request {
+	required string job_id = 1; //job id
+	required Command command = 2; //request action
+	optional string arguments = 3; //terminal arguments
+	optional string solver = 4; //solver.prototxt
+	optional string train_val_net = 5; //train.prototxt
+	optional string test_net = 6; //test.prototxt
+	optional string image_folder = 7; //sample set dir in server
+	optional Type network_type = 8; //network_type
+	optional string model_iter = 9; //model iteration
+	optional string model_seg = 10; //model segments
+
+
+	enum Command{
+		TRAIN = 0;
+		ABORT = 1;
+		REQTEST =  2
+		TEST = 3;
+		DELETE = 4;
+
+	}
+
+	enum Type{
+		DETECTION = 0;
+		ATTRIBUTES = 1;
+		FACE = 2;
+		CUSTOM = 3;
+	}
+}
+
+message Response {
+	optional string line_num = 1; //lines number in this buffer
+	repeated string log_line = 2; //each line of log
+	optional bool log_end = 3; //end of the log
+	optional bool model_exists = 4; //tell model exists in test server
+	optional string error = 5; //return error if happens
+}
