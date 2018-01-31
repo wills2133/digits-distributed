@@ -21,3 +21,4 @@ python-magic>=0.2
 
 click==6.7
 itsdangerous==0.24
+rarfile==3.0

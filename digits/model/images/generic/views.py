@@ -542,10 +542,7 @@ def show(job, related_jobs=None):
     """
     data_extensions = get_data_extensions()
     view_extensions = get_view_extensions()
-    #######
-    # print "-----------------------get_performance_data"
-    # # performance_data = get_performance_data(job.dir())
-    # #######
+
     return flask.render_template(
         'models/images/generic/show.html',
         job=job,
@@ -1145,33 +1142,10 @@ def get_view_extensions():
 
 
 #################
-def get_performance_data(job_dir):
-    from . import cal_map
-
-    performance_data = {}
-    data_file_path = job_dir + '/performance_data.txt'
-
-    if not os.path.exists(data_file_path) :
-        cal_map.calculate_map(job_dir, job_dir)
-    print data_file_path
-    
-    if os.path.exists(data_file_path):
-        f = open ( data_file_path )
-        all_lines = f.readlines()
-        for cls_data_line in all_lines:
-            cls_data = cls_data_line.split('|')
-            performance_data[cls_data[0]] = ('<br>').join( cls_data[1:-1] )
-    else:
-        print 'can not find performance_data.txt'
-    # print performance_data
-    return performance_data
-#################
-
-#################
 @blueprint.route('/cal_performance_data.json', methods=['POST'])
 @blueprint.route('/cal_performance_data', methods=['POST', 'GET'])
 def cal_performance_data():
-    from . import cal_map
+    from digits.job_client import cal_map
 
     if 'sp_pic_dir' in flask.request.form :
         sp_pic_dir = flask.request.form['sp_pic_dir']
@@ -1228,41 +1202,80 @@ def cal_performance_data():
 
 
 #################
-@blueprint.route('/get_label.json', methods=['POST'])
-@blueprint.route('/get_label', methods=['POST', 'GET'])
+@blueprint.route('/get_label/<job_id>.json', methods=['POST'])
+@blueprint.route('/get_label/<job_id>', methods=['POST', 'GET'])
 # @blueprint.route('/get_label', methods=['GET'])
-def get_label():
-    from . import save_labels
+def get_label(job_id):
+    from digits.job_client import save_labels
+    from digits.job_client import job_client
+
+    ###get address of server runs model 
+    if 'test_server_ip' in flask.request.form:
+        test_server_ip = flask.request.form['test_server_ip']
+    else:
+         raise werkzeug.exceptions.BadRequest(' "test server ip" is a required field')
+    if 'test_server_port' in flask.request.form:
+        test_server_port = flask.request.form['test_server_port']
+    else:
+         raise werkzeug.exceptions.BadRequest(' "test server port" is a required field')
+
+
+    if test_server_ip:
+        test_server_ip = str(test_server_ip)
+    else:
+        raise werkzeug.exceptions.BadRequest(' please fill in "test server ip"')
+
+    if test_server_ip:
+        test_server_port = int(test_server_port)
+    else:
+        raise werkzeug.exceptions.BadRequest(' please fill in "test server port"')
+    
+    test_server_addr = (test_server_ip, test_server_port)
+
+
+    #### send model to the test server
+    iter_num = -1
+    # GET ?epoch=n
+    if 'epoch' in flask.request.args:
+        iter_num = str(flask.request.args['epoch'])
+
+    # POST ?snapshot_epoch=n (from form)
+    elif 'snapshot_epoch' in flask.request.form:
+        iter_num = str   (flask.request.form['snapshot_epoch'])
+
+    if 'job_dir' in flask.request.form:
+        job_dir = flask.request.form['job_dir']
+
+    try:
+        print job_dir + '/server_job_info.txt'
+        f = open(job_dir + '/server_job_info.txt')
+        server_job_info = f.readlines()
+        training_server_ip = str( server_job_info[3].rstrip('\n') )
+        training_server_port = int( server_job_info[4].rstrip('\n') )
+        f.close()
+    except:
+        print 'server_download: cannot find server_job_info.txt'
+        raise
+
+    training_server_addr = (training_server_ip, training_server_port)
+
+    job_client.test_request(training_server_addr, test_server_addr, job_id, iter_num)
+    ####
+
     from PIL import ImageDraw, Image, ImageFont
     if 'sp_pic_dir' in flask.request.form:
         sp_pic_dir = flask.request.form['sp_pic_dir']
     else:
          raise werkzeug.exceptions.BadRequest('pictues path is a required field')
 
+
     ###get img name list
     if os.path.exists(sp_pic_dir):
         img_names = os.listdir(sp_pic_dir)
     else:
-        raise werkzeug.exceptions.BadRequest('plese specify a valild pictues dir')
+        raise werkzeug.exceptions.BadRequest('plese fill in "pictures path" ')
 
-    ###get img width and height
-
-    ###get address of server runs model 
-    if 'test_server_ip' in flask.request.form:
-        test_server_ip = flask.request.form['test_server_ip']
-    else:
-         raise werkzeug.exceptions.BadRequest('test server ip is a required field')
-    if 'test_server_port' in flask.request.form:
-        test_server_port = flask.request.form['test_server_port']
-    else:
-         raise werkzeug.exceptions.BadRequest('test server port is a required field')
-
-    test_server_ip = str(test_server_ip)
-    test_server_port = int(test_server_port)
-    test_server_addr = (test_server_ip, test_server_port)
-
-    
-
+    ###get img width and height 
     img_path_0 = os.path.join( sp_pic_dir, img_names[0] )
     img = Image.open(img_path_0)
     img_w = img.size[0]
@@ -1352,7 +1365,7 @@ def show_sample():
     if os.path.exists(label_file_dir):
         filename_sets = os.listdir(label_file_dir)
     else:
-        raise werkzeug.exceptions.BadRequest('labels_prediction is not found, please get prediction first')
+        raise werkzeug.exceptions.BadRequest('labels_prediction is not found, please "get prediction" first')
 
     ###
     imgs = []
@@ -1595,18 +1608,18 @@ def upload_success(job_id):  # run after all the chunks is upload
 @blueprint.route('/<job_id>/server_download',
                  methods=['GET', 'POST'],
                  defaults={'extension': 'tar.gz'})
-@blueprint.route('/<job_dir>/server_download.<extension>',
+@blueprint.route('/<job_id>/server_download.<extension>',
                  methods=['GET', 'POST'])
 def server_download(job_id, extension):
     
     iter_num = -1
     # GET ?epoch=n
     if 'epoch' in flask.request.args:
-        iter_num = float(flask.request.args['epoch'])
+        iter_num = str(flask.request.args['epoch'])
 
     # POST ?snapshot_epoch=n (from form)
     elif 'snapshot_epoch' in flask.request.form:
-        iter_num = float(flask.request.form['snapshot_epoch'])
+        iter_num = str(flask.request.form['snapshot_epoch'])
 
     if 'job_dir' in flask.request.form:
         job_dir = flask.request.form['job_dir']

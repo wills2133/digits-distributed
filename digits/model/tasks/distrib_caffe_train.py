@@ -28,8 +28,7 @@ import werkzeug.exceptions
 # Must import after importing digit.config
 import caffe
 import caffe_pb2
-#####
-from . import ssd_pascal
+
 
 # NOTE: Increment this every time the pickled object changes
 PICKLE_VERSION = 5
@@ -65,6 +64,8 @@ class DistributedTrainTask(CaffeTrainTask):
         super(DistributedTrainTask, self).__init__(**kwargs)
 
     def save_files_generic(self):
+        #####
+        from digits.job_client import ssd_pascal
         ############## parameters #############
         # Add non-data layers
         job_path = self.path(self.train_val_file)
@@ -140,6 +141,8 @@ class DistributedTrainTask(CaffeTrainTask):
         return True
 
     def run(self, resources):
+
+        from digits.job_client import job_client
         """
         Execute the task
 
@@ -170,8 +173,7 @@ class DistributedTrainTask(CaffeTrainTask):
             self.logger.info('Task subprocess args: "{}"'.format(args))
         else:
             self.logger.info('Task subprocess args: "%s"' % ' '.join(args))
-        
-        from . import job_client
+
         job_server_ip = str(self.train_server_ip)
         job_server_host = int(self.train_server_port)
         job_server_addr = (job_server_ip, job_server_host)
@@ -188,6 +190,8 @@ class DistributedTrainTask(CaffeTrainTask):
             server_info = f_info_r.readlines()
             f_info_w = open(self.job_dir+'/server_job_info.txt', 'w')
             f_info_w.writelines(server_info)
+            f_info_w.write(self.train_server_ip + '\n')
+            f_info_w.write(self.train_server_port + '\n')
             f_info_r.close()
             f_info_w.close()
         except Exception:
@@ -195,7 +199,7 @@ class DistributedTrainTask(CaffeTrainTask):
             raise
 
 
-        thread_log = job_client.training_request( job_server_addr, (' ').join(args) , self.job_dir, self.job_id, self.network_type)
+        thread_log = job_client.training_request( job_server_addr, self.job_id, (' ').join(args) , self.job_dir, self.network_type)
         try:
             n = 0
             if not os.path.exists(self.job_dir):
@@ -210,7 +214,7 @@ class DistributedTrainTask(CaffeTrainTask):
                 if self.aborted.is_set():
                     if sigterm_time is None:
                         # Attempt graceful shutdown
-                        job_client.abort_request( job_server_addr, self.job_dir, self.job_id )
+                        job_client.abort_request( job_server_addr, self.job_id )
                         thread_log.stop()
                         sigterm_time = time.time()
                         self.status = Status.ABORT
@@ -235,7 +239,7 @@ class DistributedTrainTask(CaffeTrainTask):
 
                 if sigterm_time is not None and (time.time() - sigterm_time > sigterm_timeout):
                     self.logger.warning('Fail to abort normally, Sent SIGKILL to task "%s"' % self.name())
-                    job_client.abort_request( job_server_addr, self.job_dir, self.job_id)
+                    job_client.abort_request( job_server_addr, self.job_id )
                     thread_log.stop()
                     # self.logger.warning('Sent SIGKILL to task "%s"' % self.name())
                     time.sleep(0.1)
@@ -249,7 +253,7 @@ class DistributedTrainTask(CaffeTrainTask):
             f.close()
         except Exception as RUN_ERROR:
             print 'interupt while training!'
-            job_client.abort_request( job_server_addr, self.job_dir, self.job_id)
+            job_client.abort_request( job_server_addr, self.job_id )
             thread_log.stop()
             self.after_run()
             self.status = Status.ERROR
